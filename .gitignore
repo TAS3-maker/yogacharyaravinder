@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-ssr
+.cache
+.env
+.cms-media
+# Legacy generated blog files from older checkouts
+content/blog
+public/media/cms

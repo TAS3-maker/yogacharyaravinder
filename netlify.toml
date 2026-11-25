@@ -1,0 +1,46 @@
+# Netlify: static site, live blog, and admin API.
+[build]
+  command = "npm run build:netlify"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["mongoose", "sanitize-html"]
+  included_files = []
+
+[functions.blog]
+  included_files = ["dist-ssr/**"]
+
+[[redirects]]
+  from = "/blogs"
+  to = "/.netlify/functions/blog"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/blogs/*"
+  to = "/.netlify/functions/blog/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "same-origin"
