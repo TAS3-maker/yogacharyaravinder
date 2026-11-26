@@ -5,12 +5,13 @@ import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { clean } from './post-html.js';
+import { MAX_IMAGE_BYTES } from '../src/media-limits.js';
 import crypto from 'node:crypto';
 import { connect, User, Post, Category, LoginAttempt, slugify } from './db.js';
 import { putMedia, getMedia, deleteMedia, listMedia, typeOf } from './media.js';
 
 const COOKIE = 'yr_admin';
-const isProd = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY;
+const isProd = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY || process.env.VERCEL === '1';
 const secret = () => {
   const s = process.env.JWT_SECRET;
   if (!s || s.length < 32) throw new Error('JWT_SECRET must be set (32+ random characters)');
@@ -222,7 +223,7 @@ export function createApp() {
     const m = /^data:(image\/(png|jpe?g|webp|gif|avif));base64,(.+)$/.exec(String(data || ''));
     if (!m) return bad(res, 400, 'Send a PNG, JPG, WebP, GIF or AVIF image');
     const buf = Buffer.from(m[3], 'base64');
-    if (buf.length > 6 * 1024 * 1024) return bad(res, 413, 'Image is larger than 6 MB');
+    if (buf.length > MAX_IMAGE_BYTES) return bad(res, 413, 'Image is larger than 3 MB');
     const ext = m[2] === 'jpeg' ? 'jpg' : m[2];
     const d = new Date();
     const key = `cms/${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${slugify(name.replace(/\.[a-z0-9]+$/i, '')).slice(0, 50)}-${crypto.randomBytes(3).toString('hex')}.${ext}`;

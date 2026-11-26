@@ -11,13 +11,21 @@ React site with pre-rendered landing pages and server-rendered blog pages. Built
 | `npm run build` | Build the static pages, live blog renderer, and `/admin` |
 | `npm run preview` | Open the built site (and admin) at http://localhost:4173/ |
 | `npm run create-admin -- email "password" "Name"` | Create an admin / reset a password |
+| `npm run import-wp` | Import public posts from the original WordPress site into MongoDB |
 | `npm run save-assets` | One-time only: save the site's own images/videos into `public/media` (see below) |
 
-Requires Node 18.17+. No WordPress: the blog comes only from `/admin`.
+Requires Node 20.19+. Manage blog content in `/admin`.
 
 **Site images & videos** (logo, hero, testimonials…) live in `public/media/` as optimised WebP/MP4 and are committed to Git, so builds never download anything. If `public/media` is incomplete, run `npm run save-assets` once (while the old site is still online), then commit `public/media`. Blog images are served by the CMS media endpoint.
 
-**Deploy:** Netlify (see *Admin panel* below). Caching rules are in `_headers`.
+## Deploy to Vercel
+
+1. Import this repository as one Vercel project and use the repository root. `vercel.json` selects Vite, runs `npm run build`, serves `dist`, and routes `/admin`, `/api`, and `/blogs`.
+2. Set `MONGODB_URI` and `JWT_SECRET` in Vercel. Use your existing Atlas database and ensure it allows connections from the deployment. `ADMIN_EMAIL` and `ADMIN_PASSWORD` are needed only to create the first owner when the database has no users.
+3. Connect a **private Vercel Blob** store to the project and make `BLOB_READ_WRITE_TOKEN` available to the deployment. This stores images uploaded through `/admin`.
+4. If existing posts use images from `.cms-media/`, run `npm run migrate:vercel-media` locally with the destination store's `BLOB_READ_WRITE_TOKEN`. The script preserves the existing media keys. For an existing Netlify store, set `NETLIFY_SITE_ID` and `NETLIFY_AUTH_TOKEN` on Vercel to keep serving images from it as a fallback.
+
+The frontend, admin API, and blog renderer deploy together. Post updates and scheduled publication are served directly from MongoDB.
 
 ## Admin panel (CMS) — /admin
 
@@ -26,11 +34,11 @@ Blog posts and categories are managed at **https://yogacharyaravinder.com/admin*
 | Part | Where |
 |---|---|
 | Admin UI (React) | `admin/index.html`, `src/admin/*` — built separately (`npm run build:admin`), so it adds **zero** JavaScript to the public pages |
-| API (Express) | `server/app.js` — runs as the Netlify Function `netlify/functions/api.mjs` at `/api/*` |
+| API (Express) | `server/app.js` — runs at `/api/*` on Vercel and Netlify |
 | Database | MongoDB Atlas (`server/db.js`: users, posts, categories) |
-| Uploaded images | Netlify Blobs (local folder `.cms-media/` on your computer). Resized in the browser before upload (max 2000px, WebP) |
+| Uploaded images | Vercel Blob, Netlify Blobs, or `.cms-media/` locally. Photos are resized in the browser before upload (max 2000px and 3 MB per image). |
 
-**How publishing works:** The server reads MongoDB on every blog request. Posts marked published appear on the listing, category page, and sitemap once their publish date and time arrive. Saving an edit or unpublishing takes effect on the next request. Local dev, preview, and Netlify use the same visibility rule.
+**How publishing works:** The server reads MongoDB on every blog request. Posts marked published appear on the listing, category page, and sitemap once their publish date and time arrive. Saving an edit or unpublishing takes effect on the next request. Local dev, preview, Vercel, and Netlify use the same visibility rule.
 
 Security: passwords hashed with bcrypt, login in an httpOnly SameSite=strict cookie (7 days), CSRF header check, login rate limit (8 failed tries per 15 min), HTML sanitised on save, /admin is noindex. Changing your password logs out other devices.
 
@@ -45,13 +53,17 @@ Security: passwords hashed with bcrypt, login in an httpOnly SameSite=strict coo
 
 Extra users: *Users* page (admins only). Editors can manage posts and categories. A forgotten password can be reset with `npm run create-admin -- email "new-password"`.
 
+### Import WordPress posts
+
+Run `npm run import-wp -- --dry-run` to check the source, then `npm run import-wp` to seed the database configured by `MONGODB_URI`. Pass a different WordPress base URL after `--` to import from another host. The import keeps the original publish dates and categories and skips existing post slugs. WordPress-hosted images are copied to local CMS storage, or directly to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set.
+
 ### Local development
 ```bash
 cp .env.example .env    # fill MONGODB_URI + JWT_SECRET (+ ADMIN_EMAIL / ADMIN_PASSWORD for the first login)
 npm run dev             # site + admin at http://localhost:5173/admin (the API runs inside the dev server)
 ```
 `npm run preview` (after `npm run build`) also serves /admin and the API. If something is missing, the login screen says exactly what (e.g. "MONGODB_URI is not set" or "Can't connect to MongoDB").
-Note: images you upload locally are stored in `.cms-media/` on your computer, and images uploaded on the live site are stored in Netlify Blobs. Use one MongoDB database for both, but upload the real posts' images on the live admin.
+Images uploaded locally are stored in `.cms-media/`. Images uploaded on the live site go to the deployment's blob store.
 
 ## Razorpay
 The plan buttons open Razorpay Payment Buttons, the same IDs and element ids as the live site (`basic-plan`, `disc-pro-plan`, `yoga-trial-1`, ...), so GTM click triggers keep working. The mapping lives in `SITE.razorpay` in `src/site.config.js`. Razorpay's script loads only when a visitor hovers or taps a plan button (no PageSpeed cost). If it can't load, the button falls back to its WhatsApp link. Code: `src/runtime/razorpay.js`.

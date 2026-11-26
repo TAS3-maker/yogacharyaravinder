@@ -7,21 +7,21 @@ import { SITE } from '../src/site.config.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
-const ssr = await import(pathToFileURL(path.join(root, 'dist-ssr/entry-server.js')).href);
+const blogOnly = process.argv.includes('--blog-only');
+const ssrDir = path.join(root, blogOnly ? 'dist-vercel-ssr' : 'dist-ssr');
 const { pageHead } = await import('../server/page-head.js');
 // Warn about any /media file a page uses that isn't in public/media
 const missing = new Set();
 const hasLocal = (u) => fs.existsSync(path.join(root, 'public', decodeURI(u)));
 const checkMedia = (html) => { for (const [u] of html.matchAll(/\/media\/[^"'\s,)]+/g)) if (!hasLocal(u)) missing.add(u); return html; };
 
-let template = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-fs.rmSync(path.join(dist, 'index.html')); // template only; real pages are written below
+let template = fs.readFileSync(path.join(blogOnly ? root : dist, 'index.html'), 'utf8');
 
 // 1) Inline the stylesheet (removes the only render-blocking request)
-template = template.replace(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/, (_, href) => {
-  const css = fs.readFileSync(path.join(dist, href), 'utf8');
-  return `<style>${css.replace(/<\/style/gi, '<\\/style')}</style>`;
-});
+const inlineStyle = (file) => `<style>${fs.readFileSync(file, 'utf8').replace(/<\/style/gi, '<\\/style')}</style>`;
+template = blogOnly
+  ? template.replace('</head>', () => `${inlineStyle(path.join(root, 'src/styles.css'))}</head>`)
+  : template.replace(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/, (_, href) => inlineStyle(path.join(dist, href)));
 
 // 2) Google Tag Manager + any extra pixels from site.config.js (all fired by one loader)
 const px = SITE.pixels || {};
@@ -66,15 +66,9 @@ function write(route, html, meta, pageKey, hydrate) {
   console.log('  ✓', route);
 }
 
-const urls = [];
-console.log('Prerendering:');
-for (const [key, p] of Object.entries(ssr.pages)) {
-  const { html, meta } = await ssr.renderPage(key);
-  write(p.path, html, { ...meta, noindex: p.noindex }, key, p.hydrate);
-}
 // The live blog uses the same document shell and server renderer.
-fs.writeFileSync(path.join(root, 'dist-ssr/package.json'), '{"type":"module"}');
-fs.writeFileSync(path.join(root, 'dist-ssr/blog.html'), template
+fs.writeFileSync(path.join(ssrDir, 'package.json'), '{"type":"module"}');
+fs.writeFileSync(path.join(ssrDir, 'blog.html'), template
   .replace('<!--gtm-->', () => gtm)
   .replace('<!--gtm-noscript-->', () => gtmNoscript)
   .replace('<!--page-->', 'blogs')
@@ -82,19 +76,32 @@ fs.writeFileSync(path.join(root, 'dist-ssr/blog.html'), template
   .replace(/<script type="module"[^>]*><\/script>/g, '')
   .replace(/<link rel="modulepreload"[^>]*>/g, ''));
 
-// Until the homepage is rebuilt, opening "/" goes to the discount page (so previews aren't a blank 404)
-if (!fs.existsSync(path.join(dist, 'index.html'))) {
-  fs.writeFileSync(path.join(dist, 'index.html'), '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=/discount-pricing/"><link rel="canonical" href="/discount-pricing/"><a href="/discount-pricing/">Continue</a>');
-}
+const urls = [];
+if (!blogOnly) await writeStaticPages();
 
-// 4) sitemap + robots
-fs.writeFileSync(
-  path.join(dist, 'sitemap.xml'),
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
-    .filter((u) => !u.noindex)
-    .map((u) => `  <url><loc>${u.loc}</loc></url>`)
-    .join('\n')}\n</urlset>\n`
-);
-fs.writeFileSync(path.join(dist, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\nSitemap: ${SITE.url}/blogs/sitemap.xml\n`);
-console.log(`Done: ${urls.length} pages written to dist/`);
-if (missing.size) console.log(`⚠ ${missing.size} media files are missing from public/media:\n   ${[...missing].slice(0, 15).join('\n   ')}`);
+async function writeStaticPages() {
+  const ssr = await import(pathToFileURL(path.join(ssrDir, 'entry-server.js')).href);
+  fs.rmSync(path.join(dist, 'index.html')); // template only; real pages are written below
+  console.log('Prerendering:');
+  for (const [key, p] of Object.entries(ssr.pages)) {
+    const { html, meta } = await ssr.renderPage(key);
+    write(p.path, html, { ...meta, noindex: p.noindex }, key, p.hydrate);
+  }
+
+  // Until the homepage is rebuilt, opening "/" goes to the discount page (so previews aren't a blank 404)
+  if (!fs.existsSync(path.join(dist, 'index.html'))) {
+    fs.writeFileSync(path.join(dist, 'index.html'), '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=/discount-pricing/"><link rel="canonical" href="/discount-pricing/"><a href="/discount-pricing/">Continue</a>');
+  }
+
+  // 4) sitemap + robots
+  fs.writeFileSync(
+    path.join(dist, 'sitemap.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
+      .filter((u) => !u.noindex)
+      .map((u) => `  <url><loc>${u.loc}</loc></url>`)
+      .join('\n')}\n</urlset>\n`
+  );
+  fs.writeFileSync(path.join(dist, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\nSitemap: ${SITE.url}/blogs/sitemap.xml\n`);
+  console.log(`Done: ${urls.length} pages written to dist/`);
+  if (missing.size) console.log(`⚠ ${missing.size} media files are missing from public/media:\n   ${[...missing].slice(0, 15).join('\n   ')}`);
+}

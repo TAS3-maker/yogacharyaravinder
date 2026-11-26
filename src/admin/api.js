@@ -1,3 +1,5 @@
+import { MAX_IMAGE_BYTES } from '../media-limits.js';
+
 // Tiny fetch wrapper for the admin API
 export async function api(path, { method = 'GET', body } = {}) {
   const res = await fetch('/api' + path, {
@@ -16,6 +18,7 @@ export async function uploadImage(file) {
   if (!/^image\/(png|jpe?g|webp|gif|avif)$/.test(file.type)) throw new Error('Please choose a PNG, JPG, WebP, GIF or AVIF image');
   let dataUrl, width, height;
   if (file.type === 'image/gif') {
+    if (file.size > MAX_IMAGE_BYTES) throw new Error('Choose a GIF smaller than 3 MB');
     dataUrl = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(file); });
     const img = await createImageBitmap(file); width = img.width; height = img.height;
   } else {
@@ -26,7 +29,13 @@ export async function uploadImage(file) {
     c.getContext('2d').drawImage(img, 0, 0, width, height);
     dataUrl = c.toDataURL('image/webp', 0.88);
     if (!dataUrl.startsWith('data:image/webp')) dataUrl = c.toDataURL('image/jpeg', 0.88); // Safari fallback
+    if (dataUrl.length > MAX_IMAGE_BYTES * 4 / 3) {
+      dataUrl = c.toDataURL(dataUrl.startsWith('data:image/webp') ? 'image/webp' : 'image/jpeg', 0.72);
+    }
   }
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+  const bytes = Math.floor(base64.replace(/=+$/, '').length * 3 / 4);
+  if (bytes > MAX_IMAGE_BYTES) throw new Error('Choose an image smaller than 3 MB');
   const { url } = await api('/media', { method: 'POST', body: { name: file.name, data: dataUrl } });
   return { url, width, height };
 }

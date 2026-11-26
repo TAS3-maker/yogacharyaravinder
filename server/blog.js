@@ -12,11 +12,13 @@ export async function renderBlog(path, renderer, template) {
   return template.replace('<!--head-->', () => head).replace('<!--app-->', () => body);
 }
 
-let builtBlog;
-export async function serveBlog(path) {
-  builtBlog ??= Promise.all([
-    import(pathToFileURL(resolve('dist-ssr/entry-server.js')).href),
-    readFile(resolve('dist-ssr/blog.html'), 'utf8'),
-  ]);
-  return renderBlog(path, ...await builtBlog);
+const builds = new Map();
+export async function serveBlog(path, buildDir = 'dist-ssr') {
+  if (!builds.has(buildDir)) {
+    builds.set(buildDir, Promise.all([
+      import(pathToFileURL(resolve(buildDir, 'entry-server.js')).href),
+      readFile(resolve(buildDir, 'blog.html'), 'utf8'),
+    ]));
+  }
+  return renderBlog(path, ...await builds.get(buildDir));
 }

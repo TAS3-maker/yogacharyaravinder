@@ -1,0 +1,28 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/cms.js": { "includeFiles": "dist-vercel-ssr/**" }
+  },
+  "rewrites": [
+    { "source": "/blogs{/}?", "destination": "/api/cms?__blog_path=/" },
+    { "source": "/blogs/:blogPath+{/}?", "destination": "/api/cms?__blog_path=:blogPath+" },
+    { "source": "/api/:scope(auth|posts|categories|users|media|media-library)/:rest*", "destination": "/api/cms?__cms_path=:scope/:rest*" },
+    { "source": "/admin{/}?", "destination": "/admin/index.html" },
+    { "source": "/admin/posts/:id", "destination": "/admin/index.html" },
+    { "source": "/admin/:page(categories|users|account)", "destination": "/admin/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/admin/:path*{/}?",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "same-origin" }
+      ]
+    }
+  ]
+}

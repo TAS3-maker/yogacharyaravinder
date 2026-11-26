@@ -1,7 +1,7 @@
 {
   "name": "yogacharyaravinder-react",
   "version": "1.0.0",
-  "description": "Yogacharya Ravinder website \u2014 React rebuild with static prerendering",
+  "description": "Yogacharya Ravinder website — React rebuild with static prerendering",
   "scripts": {
     "dev": "vite",
     "build": "npm run build:only && npm run build:admin",
@@ -9,8 +9,11 @@
     "build:only": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "build:admin": "vite build --config vite.admin.config.js",
     "build:netlify": "npm run build",
+    "vercel-build": "vite build --ssr src/entry-server.jsx --outDir dist-vercel-ssr && node scripts/prerender.mjs --blog-only",
     "preview": "vite preview --port 4173",
     "create-admin": "node scripts/create-admin.mjs",
+    "import-wp": "node scripts/import-wp.mjs",
+    "migrate:vercel-media": "node scripts/migrate-vercel-media.mjs",
     "save-assets": "node scripts/save-site-assets.mjs"
   },
   "dependencies": {
@@ -19,6 +22,7 @@
     "@tiptap/pm": "^3.35.0",
     "@tiptap/react": "^3.35.0",
     "@tiptap/starter-kit": "^3.35.0",
+    "@vercel/blob": "^2.9.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "dotenv": "^18.0.10",
@@ -41,6 +45,6 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=18.17"
+    "node": ">=20.19"
   }
 }
