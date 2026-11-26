@@ -86,13 +86,37 @@ function Login({ onIn }) {
 // ---------- posts list ----------
 function Posts() {
   const [q, setQ] = useState('');
+  const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
-  const [d, setD] = useState(null);
+  const [result, setResult] = useState(null);
+  const [attempt, setAttempt] = useState(0);
+  const filters = new URLSearchParams({ q: search, status }).toString();
+  const path = `/posts?${filters}&page=${page}`;
+  const requestKey = `${path}#${attempt}`;
+  const waitingForSearch = q !== search;
+  const loading = waitingForSearch || result?.key !== requestKey;
+  const error = loading ? null : result.error;
+  const d = result?.data;
+
   useEffect(() => {
-    const t = setTimeout(() => api(`/posts?q=${encodeURIComponent(q)}&status=${status}&page=${page}`).then(setD).catch((e) => toast(e.message, 'err')), 200);
-    return () => clearTimeout(t);
-  }, [q, status, page]);
+    const timer = setTimeout(() => setSearch(q), 200);
+    return () => clearTimeout(timer);
+  }, [q]);
+
+  useEffect(() => {
+    if (waitingForSearch) return;
+    const controller = new AbortController();
+    api(path, { signal: controller.signal }).then((data) => {
+      if (!controller.signal.aborted) setResult({ key: requestKey, data, filters });
+    }).catch((err) => {
+      if (!controller.signal.aborted) setResult((previous) => ({ ...previous, key: requestKey, error: err.message }));
+    });
+    return () => controller.abort();
+  }, [filters, path, requestKey, waitingForSearch]);
+
+  const shownPage = d?.page ?? 1;
+  const loadingPage = loading && !waitingForSearch && result?.filters === filters && page !== shownPage;
   return (
     <>
       <header className="ph">
@@ -105,14 +129,18 @@ function Posts() {
           <option value="">All</option><option value="published">Published</option><option value="draft">Drafts</option>
         </select>
       </div>
-      {!d ? <p className="muted">Loading…</p> : d.posts.length === 0 ? <p className="muted card pad">No posts yet. Click “New post”.</p> : (
-        <div className="card">
+      <div role="status" className="post-list-status">
+        {loading && <span className="post-list-loading"><span className="post-list-spinner" aria-hidden="true" />{loadingPage ? `Loading page ${page}…` : 'Loading posts…'}</span>}
+        {error && <span className="err">{error} <button className="btn btn--ghost btn--sm" onClick={() => setAttempt((n) => n + 1)}>Retry</button></span>}
+      </div>
+      {d && (d.posts.length === 0 ? (!loading && !error && <p className="muted card pad">{q || status ? 'No posts match these filters.' : 'No posts yet. Click “New post”.'}</p>) : (
+        <div className="card post-results" aria-busy={loading}>
           <table className="tbl">
             <thead><tr><th /><th>Title</th><th>Categories</th><th>Status</th><th>Date</th></tr></thead>
             <tbody>
               {d.posts.map((p) => (
                 <tr key={p._id} onClick={() => go('/posts/' + p._id)}>
-                  <td className="thumb">{p.image?.src && <img src={p.image.src.startsWith('/media/') ? p.image.src.replace(/\.webp$/, '-414.webp') : p.image.src} alt="" />}</td>
+                  <td className="thumb">{p.image?.src && <img src={p.image.src} alt="" loading="lazy" decoding="async" />}</td>
                   <td><A to={'/posts/' + p._id} onClick={(e) => e.stopPropagation()}>{p.title}</A><small className="muted block">/blogs/{p.slug}/</small></td>
                   <td>{p.categories.map((c) => c.name).join(', ')}</td>
                   <td><span className={`badge badge--${p.status}`}>{p.status === 'published' ? 'Published' : 'Draft'}</span></td>
@@ -122,14 +150,14 @@ function Posts() {
             </tbody>
           </table>
           {d.pages > 1 && (
-            <div className="pager">
-              <button className="btn btn--ghost btn--sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>← Prev</button>
-              <span>Page {page} of {d.pages}</span>
-              <button className="btn btn--ghost btn--sm" disabled={page >= d.pages} onClick={() => setPage(page + 1)}>Next →</button>
-            </div>
+            <nav className="pager" aria-label="Blog posts pagination">
+              <button className="btn btn--ghost btn--sm" disabled={loading || !!error || shownPage <= 1} onClick={() => setPage(shownPage - 1)}>{loadingPage && page < shownPage ? 'Loading…' : '← Prev'}</button>
+              <span>Page {shownPage} of {d.pages}</span>
+              <button className="btn btn--ghost btn--sm" disabled={loading || !!error || shownPage >= d.pages} onClick={() => setPage(shownPage + 1)}>{loadingPage && page > shownPage ? 'Loading…' : 'Next →'}</button>
+            </nav>
           )}
         </div>
-      )}
+      ))}
     </>
   );
 }

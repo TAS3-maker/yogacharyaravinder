@@ -1,9 +1,10 @@
 import { MAX_IMAGE_BYTES } from '../media-limits.js';
 
 // Tiny fetch wrapper for the admin API
-export async function api(path, { method = 'GET', body } = {}) {
+export async function api(path, { method = 'GET', body, signal } = {}) {
   const res = await fetch('/api' + path, {
     method,
+    signal,
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'yr-admin' },
     body: body ? JSON.stringify(body) : undefined,

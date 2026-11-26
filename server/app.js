@@ -164,16 +164,23 @@ export function createApp() {
 
   // ----- posts -----
   r.get('/posts', auth(), wrap(async (req, res) => {
-    const { q = '', status, page = 1 } = req.query;
+    const { q = '', status } = req.query;
     const find = {};
     if (status) find.status = status;
     if (q) find.title = { $regex: String(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
     const limit = 30;
+    const requested = Number(req.query.page ?? 1);
+    const page = requested >= 1 && Number.isSafeInteger(requested) && Number.isSafeInteger((requested - 1) * limit) ? requested : 1;
+    const loadPage = (number) => Post.find(find).select('title slug status date image categories updatedAt')
+      .sort({ date: -1, _id: -1 }).skip((number - 1) * limit).limit(limit).populate('categories', 'name').lean();
     const [items, total] = await Promise.all([
-      Post.find(find).select('title slug status date image categories updatedAt').sort('-date').skip((page - 1) * limit).limit(limit).populate('categories', 'name').lean(),
+      loadPage(page),
       Post.countDocuments(find),
     ]);
-    res.json({ posts: items, total, pages: Math.ceil(total / limit) });
+    const pages = Math.ceil(total / limit);
+    const shownPage = Math.min(page, pages || 1);
+    const posts = pages && shownPage !== page ? await loadPage(shownPage) : items;
+    res.json({ posts, total, pages, page: shownPage });
   }));
   r.get('/posts/:id', auth(), wrap(async (req, res) => {
     const p = await Post.findById(req.params.id).lean();
