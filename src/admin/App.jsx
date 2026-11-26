@@ -287,57 +287,124 @@ function PostEdit({ id }) {
 }
 
 // ---------- categories ----------
+function useAdminList(resource) {
+  const [version, setVersion] = useState(0);
+  const [result, setResult] = useState(null);
+  const [action, setAction] = useState(null);
+  const loading = result?.version !== version;
+  const refresh = () => setVersion((value) => value + 1);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api(`/${resource}`, { signal: controller.signal }).then((data) => {
+      if (!controller.signal.aborted) setResult({ version, list: data[resource] });
+    }).catch((error) => {
+      if (!controller.signal.aborted) setResult((previous) => ({ ...previous, version, error: error.message }));
+    });
+    return () => controller.abort();
+  }, [resource, version]);
+
+  const busy = loading || !!action;
+  const mutate = async (key, message, request, onSuccess) => {
+    if (busy) return;
+    setAction({ key, message });
+    try {
+      await request();
+      onSuccess?.();
+      refresh();
+    } catch (error) {
+      toast(error.message, 'err');
+    } finally {
+      setAction(null);
+    }
+  };
+
+  return { list: result?.list, loading, error: loading ? null : result.error, refresh, action, busy, mutate };
+}
+
+function AdminListStatus({ resource, state }) {
+  const message = state.action?.message || (state.loading ? `Loading ${resource}…` : '');
+  return (
+    <div role="status" className="post-list-status">
+      {message && <span className="post-list-loading"><span className="post-list-spinner" aria-hidden="true" />{message}</span>}
+      {!message && state.error && <span className="err">{state.error} <button className="btn btn--ghost btn--sm" onClick={state.refresh}>Retry</button></span>}
+    </div>
+  );
+}
+
 function Categories() {
-  const [list, setList] = useState(null);
+  const state = useAdminList('categories');
+  const { list, busy, action, mutate } = state;
   const [f, setF] = useState({ name: '', description: '' });
   const [edit, setEdit] = useState(null);
-  const load = () => api('/categories').then((d) => setList(d.categories));
-  useEffect(() => { load(); }, []);
-  const add = async (e) => { e.preventDefault(); try { await api('/categories', { method: 'POST', body: f }); setF({ name: '', description: '' }); toast('Category added'); load(); } catch (e2) { toast(e2.message, 'err'); } };
-  const saveEdit = async () => { try { await api('/categories/' + edit._id, { method: 'PUT', body: edit }); setEdit(null); toast('Saved'); load(); } catch (e) { toast(e.message, 'err'); } };
-  const del = async (c) => { if (!confirm(`Delete category "${c.name}"? Posts stay, they just lose this category.`)) return; await api('/categories/' + c._id, { method: 'DELETE' }); load(); };
+  const add = (e) => {
+    e.preventDefault();
+    mutate('add', 'Adding category…', () => api('/categories', { method: 'POST', body: f }), () => {
+      setF({ name: '', description: '' });
+      toast('Category added');
+    });
+  };
+  const saveEdit = () => mutate('save', 'Saving category…', () => api('/categories/' + edit._id, { method: 'PUT', body: edit }), () => {
+    setEdit(null);
+    toast('Saved');
+  });
+  const del = (c) => {
+    if (confirm(`Delete category "${c.name}"? Posts stay, they just lose this category.`)) {
+      mutate(c._id, 'Deleting category…', () => api('/categories/' + c._id, { method: 'DELETE' }));
+    }
+  };
   return (
     <>
       <header className="ph"><h1>Categories</h1></header>
       <form className="card pad row wrap" onSubmit={add}>
         <input required placeholder="New category name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         <input placeholder="Description (optional)" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-        <button className="btn">Add</button>
+        <button className="btn" disabled={busy}>{action?.key === 'add' ? 'Adding…' : 'Add'}</button>
       </form>
-      <div className="card">
+      <AdminListStatus resource="categories" state={state} />
+      {list && <div className="card" aria-busy={busy}>
         <table className="tbl tbl--static">
           <thead><tr><th>Name</th><th>URL</th><th>Posts</th><th /></tr></thead>
           <tbody>
-            {list?.map((c) => edit?._id === c._id ? (
+            {list.map((c) => edit?._id === c._id ? (
               <tr key={c._id}>
                 <td><input value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /><input placeholder="Description" value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} /></td>
                 <td><input value={edit.slug} onChange={(e) => setEdit({ ...edit, slug: e.target.value })} /></td>
                 <td>{c.count}</td>
-                <td className="row"><button className="btn btn--sm" onClick={saveEdit}>Save</button><button className="linkbtn" onClick={() => setEdit(null)}>Cancel</button></td>
+                <td className="row"><button className="btn btn--sm" disabled={busy} onClick={saveEdit}>{action?.key === 'save' ? 'Saving…' : 'Save'}</button><button className="linkbtn" disabled={busy} onClick={() => setEdit(null)}>Cancel</button></td>
               </tr>
             ) : (
               <tr key={c._id}>
                 <td><b>{c.name}</b>{c.description && <small className="muted block">{c.description}</small>}</td>
                 <td><small>/blogs/category/{c.slug}/</small></td>
                 <td>{c.count}</td>
-                <td className="row"><button className="linkbtn" onClick={() => setEdit(c)}>Edit</button><button className="linkbtn danger" onClick={() => del(c)}>Delete</button></td>
+                <td className="row"><button className="linkbtn" disabled={busy} onClick={() => setEdit(c)}>Edit</button><button className="linkbtn danger" disabled={busy} onClick={() => del(c)}>{action?.key === c._id ? 'Deleting…' : 'Delete'}</button></td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </div>}
     </>
   );
 }
 
 // ---------- users ----------
 function Users({ me }) {
-  const [list, setList] = useState([]);
+  const state = useAdminList('users');
+  const { list, busy, action, mutate } = state;
   const [f, setF] = useState({ email: '', name: '', password: '', role: 'editor' });
-  const load = () => api('/users').then((d) => setList(d.users));
-  useEffect(() => { load(); }, []);
-  const add = async (e) => { e.preventDefault(); try { await api('/users', { method: 'POST', body: f }); setF({ email: '', name: '', password: '', role: 'editor' }); toast('User added'); load(); } catch (e2) { toast(e2.message, 'err'); } };
-  const del = async (u) => { if (!confirm(`Remove ${u.email}?`)) return; try { await api('/users/' + u.id, { method: 'DELETE' }); load(); } catch (e) { toast(e.message, 'err'); } };
+  const add = (e) => {
+    e.preventDefault();
+    mutate('add', 'Adding user…', () => api('/users', { method: 'POST', body: f }), () => {
+      setF({ email: '', name: '', password: '', role: 'editor' });
+      toast('User added');
+    });
+  };
+  const del = (u) => {
+    if (confirm(`Remove ${u.email}?`)) {
+      mutate(u.id, 'Removing user…', () => api('/users/' + u.id, { method: 'DELETE' }));
+    }
+  };
   return (
     <>
       <header className="ph"><h1>Users</h1></header>
@@ -346,14 +413,15 @@ function Users({ me }) {
         <input placeholder="Name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         <input required minLength={10} type="password" placeholder="Password (10+ chars)" autoComplete="new-password" value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} />
         <select value={f.role} onChange={(e) => setF({ ...f, role: e.target.value })}><option value="editor">Editor (posts only)</option><option value="admin">Admin</option></select>
-        <button className="btn">Add user</button>
+        <button className="btn" disabled={busy}>{action?.key === 'add' ? 'Adding…' : 'Add user'}</button>
       </form>
-      <div className="card">
+      <AdminListStatus resource="users" state={state} />
+      {list && <div className="card" aria-busy={busy}>
         <table className="tbl tbl--static">
           <thead><tr><th>Email</th><th>Name</th><th>Role</th><th /></tr></thead>
-          <tbody>{list.map((u) => <tr key={u.id}><td>{u.email}</td><td>{u.name}</td><td>{u.role}</td><td>{u.id !== me.id && <button className="linkbtn danger" onClick={() => del(u)}>Remove</button>}</td></tr>)}</tbody>
+          <tbody>{list.map((u) => <tr key={u.id}><td>{u.email}</td><td>{u.name}</td><td>{u.role}</td><td>{u.id !== me.id && <button className="linkbtn danger" disabled={busy} onClick={() => del(u)}>{action?.key === u.id ? 'Removing…' : 'Remove'}</button>}</td></tr>)}</tbody>
         </table>
-      </div>
+      </div>}
     </>
   );
 }
