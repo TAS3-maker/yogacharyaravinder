@@ -1,6 +1,7 @@
 // Admin panel: login, blog posts, categories, users, account. Client-side only (served at /admin).
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, uploadImage, fmtDate } from './api.js';
+import Icon from '../components/Icon.jsx';
 import Editor from './Editor.jsx';
 
 // ---------- tiny router (/admin/...) ----------
@@ -166,6 +167,56 @@ function Posts() {
 const blank = { title: '', slug: '', status: 'draft', date: new Date().toISOString(), excerpt: '', content: '', categories: [], image: null, seo: { title: '', description: '' } };
 const toLocalInput = (d) => { const x = new Date(d); return new Date(x - x.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 
+function PostCategories({ categories, selected, onToggle }) {
+  const searchButton = useRef(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const query = search.trim().toLowerCase();
+  const matches = query ? categories.filter((category) => category.name.toLowerCase().includes(query)) : categories;
+  const visible = query || expanded ? matches : matches.slice(0, 5);
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearch('');
+    searchButton.current?.focus();
+  };
+
+  return (
+    <section className="card pad category-picker">
+      <div className="category-picker__header">
+        <h3>Categories</h3>
+        {selected.length > 0 && <small className="category-picker__count">{selected.length} selected</small>}
+        {categories.length > 0 && <button ref={searchButton} type="button" className="category-picker__toggle" aria-label={searchOpen ? 'Close category search' : 'Search categories'} aria-expanded={searchOpen} aria-controls="post-category-search" onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}>
+          <Icon name={searchOpen ? 'close' : 'search'} size={17} />
+        </button>}
+      </div>
+      <div id="post-category-search" className="category-picker__search" hidden={!searchOpen}>
+        {searchOpen && <>
+          <Icon name="search" size={16} />
+          <input type="search" autoFocus aria-label="Search categories" placeholder="Find a category…" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => {
+            if (e.key === 'Escape') { e.preventDefault(); closeSearch(); }
+          }} />
+        </>}
+      </div>
+      {categories.length === 0 && <small className="muted">No categories yet. Add them under Categories.</small>}
+      {query && !visible.length && <small className="muted" role="status">No matching categories.</small>}
+      <div id="post-category-options" className="category-picker__options">
+        {visible.map((category) => (
+          <label key={category._id} className="check">
+            <input type="checkbox" checked={selected.includes(category._id)} onChange={() => onToggle(category._id)} /> {category.name}
+          </label>
+        ))}
+      </div>
+      {!query && categories.length > 5 && (
+        <button type="button" className="category-picker__more" aria-expanded={expanded} aria-controls="post-category-options" onClick={() => setExpanded(!expanded)}>
+          {expanded ? 'See less' : 'See more'}
+          <Icon name="chevron" size={15} />
+        </button>
+      )}
+    </section>
+  );
+}
+
 function PostEdit({ id }) {
   const isNew = id === 'new';
   const [p, setP] = useState(isNew ? blank : null);
@@ -259,13 +310,7 @@ function PostEdit({ id }) {
             <small className="muted">Scheduled posts appear automatically at the publish date and time.</small>
           </section>
 
-          <section className="card pad">
-            <h3>Categories</h3>
-            {cats.length === 0 && <small className="muted">No categories yet — add them under Categories.</small>}
-            {cats.map((c) => (
-              <label key={c._id} className="check"><input type="checkbox" checked={p.categories.includes(c._id)} onChange={() => toggleCat(c._id)} /> {c.name}</label>
-            ))}
-          </section>
+          <PostCategories key={id} categories={cats} selected={p.categories} onToggle={toggleCat} />
 
           <section className="card pad">
             <h3>Excerpt</h3>

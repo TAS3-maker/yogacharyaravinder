@@ -61,6 +61,22 @@ label input, label textarea { margin-top: 5px; }
 .tbl:not(.tbl--static) tbody tr:hover { background: #fafcfb; }
 .tbl td a { font-weight: 600; color: var(--ink); }
 .tbl td input { margin-bottom: 6px; }
+.category-picker__header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.category-picker__header h3 { margin: 0 auto 0 0; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }
+.category-picker__count { color: var(--g-d); background: var(--g-l); padding: 2px 8px; border-radius: 999px; white-space: nowrap; font-weight: 600; }
+.category-picker__toggle, .category-picker__more { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 0; background: transparent; border-radius: 7px; color: var(--g-d); cursor: pointer; font: inherit; }
+.category-picker__toggle { width: 34px; height: 34px; flex: 0 0 34px; }
+.category-picker__toggle:hover, .category-picker__toggle[aria-expanded="true"], .category-picker__more:hover { background: var(--g-l); }
+.category-picker__search { position: relative; margin-bottom: 8px; color: var(--muted); }
+.category-picker__search > svg { position: absolute; top: 11px; left: 11px; pointer-events: none; }
+.category-picker__search input { padding: 7px 10px 7px 34px; background: var(--bg); }
+.category-picker__search input:focus { outline: 1px solid var(--g); }
+.category-picker__options { max-height: 240px; overflow-y: auto; }
+.category-picker__options .check { min-height: 33px; gap: 10px; margin: 0; padding: 5px 7px; border-radius: 7px; }
+.category-picker__options .check:hover, .category-picker__options .check:has(input:checked) { background: var(--g-l); }
+.category-picker__options input { flex: none; accent-color: var(--g-d); }
+.category-picker__more { width: 100%; margin-top: 8px; padding: 6px; font-size: 13px; font-weight: 600; }
+.category-picker__more[aria-expanded="true"] svg { transform: rotate(180deg); }
 .thumb { width: 84px; }
 .thumb img { width: 72px; height: 40px; object-fit: cover; border-radius: 4px; display: block; }
 .pager { display: flex; justify-content: center; align-items: center; gap: 14px; padding: 12px; border-top: 1px solid var(--line); }
