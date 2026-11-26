@@ -14,7 +14,7 @@ React site with pre-rendered landing pages and server-rendered blog pages. Built
 | `npm run import-wp` | Import public posts from the original WordPress site into MongoDB |
 | `npm run save-assets` | One-time only: save the site's own images/videos into `public/media` (see below) |
 
-Requires Node 20.19+. Manage blog content in `/admin`.
+Requires Node 22.12+. Manage blog content in `/admin`.
 
 **Site images & videos** (logo, hero, testimonials…) live in `public/media/` as optimised WebP/MP4 and are committed to Git, so builds never download anything. If `public/media` is incomplete, run `npm run save-assets` once (while the old site is still online), then commit `public/media`. Blog images are served by the CMS media endpoint.
 

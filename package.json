@@ -9,7 +9,7 @@
     "build:only": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "build:admin": "vite build --config vite.admin.config.js",
     "build:netlify": "npm run build",
-    "vercel-build": "vite build --ssr src/entry-server.jsx --outDir dist-vercel-ssr && node scripts/prerender.mjs --blog-only",
+    "vercel-build": "vite build --ssr src/entry-server.jsx --outDir dist-vercel-ssr && node scripts/prerender.mjs --blog-only && vite build --config vite.vercel.config.js",
     "preview": "vite preview --port 4173",
     "create-admin": "node scripts/create-admin.mjs",
     "import-wp": "node scripts/import-wp.mjs",
@@ -45,6 +45,6 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.19"
+    "node": ">=22.12"
   }
 }
