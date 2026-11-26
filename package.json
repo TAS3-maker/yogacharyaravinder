@@ -5,10 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:only && npm run build:admin",
-    "dev:api": "node --watch server/dev.js",
     "build:only": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
     "build:admin": "vite build --config vite.admin.config.js",
-    "build:netlify": "npm run build",
     "vercel-build": "vite build --ssr src/entry-server.jsx --outDir dist-vercel-ssr && node scripts/prerender.mjs --blog-only && vite build --config vite.vercel.config.js",
     "preview": "vite preview --port 4173",
     "create-admin": "node scripts/create-admin.mjs",
@@ -33,8 +31,7 @@
     "preact-render-to-string": "^6.8.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "sanitize-html": "^2.18.2",
-    "serverless-http": "^4.0.0"
+    "sanitize-html": "^2.18.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",

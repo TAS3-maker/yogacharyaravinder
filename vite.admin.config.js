@@ -10,6 +10,5 @@ export default defineConfig({
   publicDir: false,
   plugins: [react()],
   resolve: { alias: { '/src': path.resolve('src') } },
-  server: { port: 5174, proxy: { '/api': 'http://localhost:8787' } },
   build: { outDir: path.resolve('dist/admin'), emptyOutDir: true },
 });

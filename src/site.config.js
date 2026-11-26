@@ -54,8 +54,5 @@ export const wa = (text = "Hi, I'm interested in joining the yoga classes") =>
   `https://wa.me/${SITE.phoneIntl}?text=${encodeURIComponent(text)}`;
 export const tel = `tel:${SITE.phone}`;
 
-// Kept for the existing page code: media files live in public/media, so URLs are used as is.
-export const resolveMedia = (url) => url;
-
 // Media helper: '2026/03/x.png' -> '/media/2026/03/x.webp' (optimised files in public/media)
 export const media = (p) => '/media/' + p.replace(/\.(png|jpe?g)$/i, '.webp');

@@ -26,7 +26,7 @@ const preact = {
 import fs from 'node:fs';
 import { SITE } from './src/site.config.js';
 
-// The same live blog runs in dev, preview, and on Netlify.
+// Local dev and preview use the same live blog queries as Vercel.
 const liveBlog = () => {
   const middleware = (server, dev) => async (req, res, next) => {
     const path = (req.url || '').split('?')[0];
@@ -71,7 +71,7 @@ const liveBlog = () => {
   };
 };
 
-// /admin + /api inside `npm run dev` and `npm run preview` (on Netlify these are the function + redirects).
+// /admin + /api inside `npm run dev` and `npm run preview`.
 // The Express API runs in-process, reading .env. No separate API server is needed.
 const adminServer = () => {
   let app;

@@ -1,5 +1,5 @@
 // All copy, prices and media for /discount-pricing/ — edit here, not in components.
-import { media, wa, resolveMedia } from '../site.config.js';
+import { media, wa } from '../site.config.js';
 
 export const meta = {
   path: '/discount-pricing/',
@@ -48,12 +48,12 @@ export const stories = {
   // Card → video pairing taken from the live page (each card's Elementor lightbox setting).
   // Clicking a card opens it in a full-screen player.
   items: [
-    { poster: media('2025/12/Group-238432.png'), alt: 'Yoga fat loss results', video: resolveMedia('/media/2025/11/video3-2.mp4') },
-    { poster: media('2025/12/Group-238433.png'), alt: 'Yoga weight loss results', video: resolveMedia('/media/2025/11/video3-1.mp4') },
-    { poster: media('2025/12/Group-238434.png'), alt: 'Wellness transformation journey', video: resolveMedia('/media/2025/11/video3-3.mp4') },
-    { poster: media('2026/04/image.webp'), alt: 'Online yoga classes', video: resolveMedia('/media/2026/04/YOGA-updated.mp4') },
-    { poster: media('2026/09/image-100.png'), alt: 'Neelam ji — 6 month yoga journey', video: resolveMedia('/media/2026/09/neelam-ji-6-month-journey.mp4') },
-    { poster: media('2026/09/image-34-Recovered.png'), alt: 'Student yoga testimonial', video: resolveMedia('/media/2026/09/testimonial-yoga-achariya.mp4') },
+    { poster: media('2025/12/Group-238432.png'), alt: 'Yoga fat loss results', video: '/media/2025/11/video3-2.mp4' },
+    { poster: media('2025/12/Group-238433.png'), alt: 'Yoga weight loss results', video: '/media/2025/11/video3-1.mp4' },
+    { poster: media('2025/12/Group-238434.png'), alt: 'Wellness transformation journey', video: '/media/2025/11/video3-3.mp4' },
+    { poster: media('2026/04/image.webp'), alt: 'Online yoga classes', video: '/media/2026/04/YOGA-updated.mp4' },
+    { poster: media('2026/09/image-100.png'), alt: 'Neelam ji — 6 month yoga journey', video: '/media/2026/09/neelam-ji-6-month-journey.mp4' },
+    { poster: media('2026/09/image-34-Recovered.png'), alt: 'Student yoga testimonial', video: '/media/2026/09/testimonial-yoga-achariya.mp4' },
   ],
   stats: [
     { icon: 'users', value: '5000+', label: 'Happy Students' },
@@ -164,7 +164,7 @@ export const trust = {
 export const reels = {
   title: 'Instagram Videos',
   subtitle: 'Short Videos, Big Impact',
-  items: [1, 2, 3, 4].map((n) => ({ src: resolveMedia(`/media/2026/03/instagram-tempelate-${n}.mp4`), poster: resolveMedia(`/media/2026/03/instagram-tempelate-${n}.webp`) })),
+  items: [1, 2, 3, 4].map((n) => ({ src: `/media/2026/03/instagram-tempelate-${n}.mp4`, poster: `/media/2026/03/instagram-tempelate-${n}.webp` })),
   cta: 'View More Videos on Instagram',
 };
 

@@ -17,7 +17,7 @@ const out = path.join(root, 'public/media');
 const cache = path.join(root, '.cache/originals');
 
 // [file, ...alternative source names]
-export const ASSETS = [
+const ASSETS = [
   ['2026/03/Frame-2147224036.png'],
   ['2026/03/cropped-fav-icon-green-270x270.png'],
   ['2026/08/star.png'],

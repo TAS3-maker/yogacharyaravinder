@@ -34,22 +34,13 @@ Blog posts and categories are managed at **https://yogacharyaravinder.com/admin*
 | Part | Where |
 |---|---|
 | Admin UI (React) | `admin/index.html`, `src/admin/*` — built separately (`npm run build:admin`), so it adds **zero** JavaScript to the public pages |
-| API (Express) | `server/app.js` — runs at `/api/*` on Vercel and Netlify |
+| API (Express) | `server/app.js` — runs at `/api/*` on Vercel and during local development |
 | Database | MongoDB Atlas (`server/db.js`: users, posts, categories) |
 | Uploaded images | Vercel Blob, Netlify Blobs, or `.cms-media/` locally. Photos are resized in the browser before upload (max 2000px and 3 MB per image). |
 
-**How publishing works:** The server reads MongoDB on every blog request. Posts marked published appear on the listing, category page, and sitemap once their publish date and time arrive. Saving an edit or unpublishing takes effect on the next request. Local dev, preview, Vercel, and Netlify use the same visibility rule.
+**How publishing works:** The server reads MongoDB on every blog request. Posts marked published appear on the listing, category page, and sitemap once their publish date and time arrive. Saving an edit or unpublishing takes effect on the next request. Local dev, preview, and Vercel use the same visibility rule.
 
 Security: passwords hashed with bcrypt, login in an httpOnly SameSite=strict cookie (7 days), CSRF header check, login rate limit (8 failed tries per 15 min), HTML sanitised on save, /admin is noindex. Changing your password logs out other devices.
-
-### One-time setup (Netlify)
-1. **MongoDB Atlas**: create a free cluster → Database Access: add a user → Network Access: allow `0.0.0.0/0` (Netlify has no fixed IPs) → copy the connection string.
-2. **Netlify**: push this folder to GitHub → *Add new site → Import from Git*. `netlify.toml` already sets the build command, functions and redirects.
-3. **Environment variables** (Site configuration → Environment variables), see `.env.example`:
-   `MONGODB_URI`, `JWT_SECRET` (64 random chars), `ADMIN_EMAIL`, and `ADMIN_PASSWORD`. Make them available to Functions.
-4. Open `/admin`, log in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` (this creates the owner account on first login), change the password under *My account*, then remove `ADMIN_PASSWORD` from Netlify.
-5. Write your first post in `/admin` and set its publish date and time.
-6. In Razorpay → Payment Buttons, set the success redirect to `https://yogacharyaravinder.com/thank-you/`.
 
 Extra users: *Users* page (admins only). Editors can manage posts and categories. A forgotten password can be reset with `npm run create-admin -- email "new-password"`.
 

@@ -25,7 +25,7 @@ const safeKey = (key) => {
   return k;
 };
 
-export const TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif', svg: 'image/svg+xml' };
+const TYPES = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', avif: 'image/avif', svg: 'image/svg+xml' };
 export const typeOf = (key) => TYPES[key.split('.').pop().toLowerCase()] || 'application/octet-stream';
 
 const onVercel = () => process.env.VERCEL === '1';

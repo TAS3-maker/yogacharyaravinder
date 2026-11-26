@@ -1,5 +1,4 @@
-// Express API for the admin panel (/admin). Runs as a Netlify Function in production and as
-// a normal Node server in development (server/dev.js).
+// Express API for the admin panel, mounted in Vercel and local Vite.
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
@@ -11,7 +10,7 @@ import { connect, User, Post, Category, LoginAttempt, slugify } from './db.js';
 import { putMedia, getMedia, deleteMedia, listMedia, typeOf } from './media.js';
 
 const COOKIE = 'yr_admin';
-const isProd = process.env.NODE_ENV === 'production' || !!process.env.NETLIFY || process.env.VERCEL === '1';
+const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
 const secret = () => {
   const s = process.env.JWT_SECRET;
   if (!s || s.length < 32) throw new Error('JWT_SECRET must be set (32+ random characters)');
@@ -237,13 +236,13 @@ export function createApp() {
 
   r.use((req, res) => bad(res, 404, 'Unknown API route'));
 
-  app.use(['/api', '/.netlify/functions/api'], r);
+  app.use('/api', r);
   // eslint-disable-next-line no-unused-vars
   app.use((err, req, res, next) => {
     if (err.code === 11000) return bad(res, 409, 'That slug or email is already used');
     if (err.name === 'CastError') return bad(res, 404, 'Not found');
     // Missing setup (env vars / database) → say exactly what's wrong instead of a generic error
-    if (/MONGODB_URI|JWT_SECRET/.test(err.message)) return bad(res, 503, `Admin not configured: ${err.message}. Add it to .env (local) or Netlify environment variables.`);
+    if (/MONGODB_URI|JWT_SECRET/.test(err.message)) return bad(res, 503, `Admin not configured: ${err.message}. Add it to .env (local) or Vercel environment variables.`);
     if (/ECONNREFUSED|ENOTFOUND|querySrv|Server selection timed out|MongoServerSelectionError|bad auth|Authentication failed/i.test(err.message + err.name))
       return bad(res, 503, `Can't connect to MongoDB (${err.message.slice(0, 120)}). Check MONGODB_URI and Atlas → Network Access (allow 0.0.0.0/0).`);
     console.error(err);
