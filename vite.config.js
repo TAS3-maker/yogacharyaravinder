@@ -1,13 +1,45 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
+import { pages } from './src/pages/index.js';
+import { SITE } from './src/site.config.js';
+
+const pageKeys = new Map(Object.entries(pages).map(([key, page]) => [page.path, key]));
+const pageKey = (url) => {
+  const path = url.split(/[?#]/)[0];
+  return pageKeys.get(path.replace(/(?:\/index\.html|\/)?$/, '/'));
+};
+
+const notFound = (file) => (req, res, next) => {
+  if (!['GET', 'HEAD'].includes(req.method) || !req.headers.accept?.includes('text/html')) return next();
+  if (pageKey(req.originalUrl || req.url)) return next();
+  if (!fs.existsSync(file)) return next();
+  res.statusCode = 404;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.end(req.method === 'HEAD' ? undefined : fs.readFileSync(file));
+};
 
 // Dev server only: pick the page component from the URL (production uses prerendered HTML)
 const devPage = () => ({
   name: 'dev-page',
   apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (pageKey(req.url)) req.url = '/index.html';
+      next();
+    });
+    return () => server.middlewares.use(notFound('public/404.html'));
+  },
+  configurePreviewServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      const key = pageKey(req.url);
+      if (key) req.url = pages[key].path + 'index.html';
+      next();
+    });
+    return () => server.middlewares.use(notFound('dist/404.html'));
+  },
   transformIndexHtml(html, ctx) {
-    const url = (ctx.originalUrl || '/').split(/[?#]/)[0];
-    const key = url.replace(/^\/|\/$/g, '') || 'home';
+    const key = pageKey(ctx.originalUrl || '/') || 'home';
     const pay = fs.readFileSync('src/runtime/razorpay.js', 'utf8').replace(/__PLANS__/g, JSON.stringify(SITE.razorpay || {}));
     return html.replace('<!--page-->', key).replace('<!--head-->', '<title>Dev preview</title>').replace('<!--pay-->', `<script>${pay}</script>`);
   },
@@ -22,9 +54,6 @@ const preact = {
   'react/jsx-dev-runtime': 'preact/jsx-dev-runtime',
   react: 'preact/compat',
 };
-
-import fs from 'node:fs';
-import { SITE } from './src/site.config.js';
 
 // Local dev and preview use the same live blog queries as Vercel.
 const liveBlog = () => {
@@ -114,6 +143,7 @@ const adminServer = () => {
 };
 
 export default defineConfig(({ command }) => ({
+  appType: 'mpa',
   plugins: [react(), adminServer(), devPage(), liveBlog()],
   resolve: command === 'build' ? { alias: preact } : {},
   ssr: { noExternal: command === 'build' ? ['preact', 'preact-render-to-string'] : [] },

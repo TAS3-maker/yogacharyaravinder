@@ -8,6 +8,8 @@ import { MAX_IMAGE_BYTES } from '../src/media-limits.js';
 import crypto from 'node:crypto';
 import { connect, User, Post, Category, LoginAttempt, slugify } from './db.js';
 import { putMedia, getMedia, deleteMedia, listMedia, typeOf } from './media.js';
+import { LANDING_KEYS, landingPayload, landingForAdmin, saveLanding, resetLanding, razorpayPayment } from './landing.js';
+import { CMS_PAGES, PAYMENTS } from '../src/data/cms.js';
 
 const COOKIE = 'yr_admin';
 const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
@@ -75,6 +77,22 @@ export function createApp() {
   }));
 
   r.use(wrap(async (req, res, next) => { await connect(); next(); }));
+
+  // ----- landing pages (public read: used by the pages to pick up new prices without waiting for a rebuild) -----
+  const isLanding = (p) => p === 'thank-you' || !!CMS_PAGES[p];
+  r.get('/landing/:page', wrap(async (req, res) => {
+    if (!isLanding(req.params.page)) return bad(res, 404, 'Not found');
+    res.set('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300');
+    res.json(await landingPayload(req.params.page));
+  }));
+  // Thank You page: amount actually paid (needs RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)
+  r.get('/razorpay-payment', wrap(async (req, res) => {
+    const id = String(req.query.id || '');
+    if (!/^pay_[A-Za-z0-9]{6,30}$/.test(id)) return bad(res, 400, 'Invalid payment id');
+    const { status, body } = await razorpayPayment(id);
+    if (status === 200) res.set('Cache-Control', 'private, max-age=300');
+    res.status(status).json(body);
+  }));
 
   r.post('/auth/login', wrap(async (req, res) => {
     secret(); // config check
@@ -220,6 +238,25 @@ export function createApp() {
   r.delete('/posts/:id', auth(), wrap(async (req, res) => {
     await Post.findByIdAndDelete(req.params.id);
     res.json({ ok: true });
+  }));
+
+  // ----- landing pages (admins only: prices and payment buttons) -----
+  r.get('/admin-landing', auth('admin'), (req, res) => res.json({
+    pages: [...Object.entries(CMS_PAGES).map(([key, p]) => ({ key, label: p.label, path: p.path, sections: p.sections })),
+      { key: PAYMENTS, label: 'Razorpay payment buttons', path: '', sections: ['buttons'] }],
+    rebuild: !!process.env.DEPLOY_HOOK_URL,
+  }));
+  r.get('/admin-landing/:page', auth('admin'), wrap(async (req, res) => {
+    if (!LANDING_KEYS.includes(req.params.page)) return bad(res, 404, 'Not found');
+    res.json(await landingForAdmin(req.params.page));
+  }));
+  r.put('/admin-landing/:page', auth('admin'), wrap(async (req, res) => {
+    if (!LANDING_KEYS.includes(req.params.page)) return bad(res, 404, 'Not found');
+    res.json(await saveLanding(req.params.page, req.body?.data || {}, req.user));
+  }));
+  r.delete('/admin-landing/:page', auth('admin'), wrap(async (req, res) => {
+    if (!LANDING_KEYS.includes(req.params.page)) return bad(res, 404, 'Not found');
+    res.json(await resetLanding(req.params.page));
   }));
 
   // ----- media -----

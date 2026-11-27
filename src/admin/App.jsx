@@ -1,8 +1,9 @@
-// Admin panel: login, blog posts, categories, users, account. Client-side only (served at /admin).
+// Admin panel: login, blog posts, categories, landing pages (offers & prices), users, account. Client-side only (served at /admin).
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { api, uploadImage, fmtDate } from './api.js';
 import Icon from '../components/Icon.jsx';
 import Editor from './Editor.jsx';
+import { LandingList, LandingEdit } from './Landing.jsx';
 
 // ---------- tiny router (/admin/...) ----------
 const usePath = () => {
@@ -36,18 +37,20 @@ export default function App() {
   const m = path.match(/^\/posts\/([^/]+)$/);
   if (m) page = <PostEdit id={m[1]} />;
   else if (path === '/categories') page = <Categories />;
+  else if (path === '/landing' && user.role === 'admin') page = <LandingList A={A} />;
+  else if (path.startsWith('/landing/') && user.role === 'admin') page = <LandingEdit key={path} pageKey={path.slice(9)} A={A} toast={toast} />;
   else if (path === '/users' && user.role === 'admin') page = <Users me={user} />;
   else if (path === '/account') page = <Account user={user} />;
   else page = <Posts />;
 
   const logout = async () => { await api('/auth/logout', { method: 'POST' }); setUser(null); go('/'); };
-  const nav = [['/', 'Blog posts'], ['/categories', 'Categories'], ...(user.role === 'admin' ? [['/users', 'Users']] : []), ['/account', 'My account']];
+  const nav = [['/', 'Blog posts'], ['/categories', 'Categories'], ...(user.role === 'admin' ? [['/landing', 'Landing pages'], ['/users', 'Users']] : []), ['/account', 'My account']];
   return (
     <div className="shell">
       <aside className="side">
         <div className="side__brand">🧘 Yogacharya<br /><small>Admin</small></div>
         <nav>
-          {nav.map(([to, l]) => <A key={to} to={to} className={(to === '/' ? path === '/' || path.startsWith('/posts') : path === to) ? 'on' : ''}>{l}</A>)}
+          {nav.map(([to, l]) => <A key={to} to={to} className={(to === '/' ? path === '/' || path.startsWith('/posts') : path === to || path.startsWith(to + '/')) ? 'on' : ''}>{l}</A>)}
         </nav>
         <div className="side__foot">
           <a href="/" target="_blank" rel="noopener">View site ↗</a>

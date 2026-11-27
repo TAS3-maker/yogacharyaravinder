@@ -3,9 +3,11 @@ import { pages } from './pages/index.js';
 
 export { pages };
 
+// props.cms = this page's admin content (from MongoDB at build time); the page's getMeta() turns it into SEO tags.
 export async function renderPage(key, props = {}) {
-  const { default: Page, meta } = await pages[key].load();
-  return { html: renderToString(<Page {...props} />), meta };
+  const mod = await pages[key].load();
+  const { default: Page, meta, getMeta } = mod;
+  return { html: renderToString(<Page {...props} />), meta: getMeta ? getMeta(props.cms) : meta };
 }
 
 // Renderer for the blog pages (scripts/blog-routes.mjs)

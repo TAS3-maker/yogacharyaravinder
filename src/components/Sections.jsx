@@ -11,7 +11,7 @@ export function Hero({ d }) {
     <section className="hero">
       <div className="wrap hero__grid">
         <div className="hero__copy">
-          <Pill>{d.pill}</Pill>
+          {d.pill && <Pill>{d.pill}</Pill>}
           <h1 className="h1">
             {d.title[0]}<span className="hl">{d.title[1]}</span>{d.title[2]}
           </h1>
@@ -70,13 +70,13 @@ export function Pricing({ d }) {
     <section className="sec sec--grey" id="pricing">
       <div className="wrap">
         <header className="shead">
-          <Pill>{d.pill}</Pill>
+          {d.pill && <Pill>{d.pill}</Pill>}
           <h2 className="h2 pricing__title">
-            <Emoji e="❄️" /> <span className="g">{d.title}</span>{' '}
-            <small>{d.titleSuffix}</small> <span className="o">{d.titleOff}</span>
+            {(d.icon ?? '❄️') && <><Emoji e={d.icon ?? '❄️'} />{' '}</>}<span className="g">{d.title}</span>{' '}
+            {d.titleOff && <><small>{d.titleSuffix}</small> <span className="o">{d.titleOff}</span></>}
           </h2>
           <p className="shead__sub">{d.subtitle}</p>
-          <p className="warn"><i className="dot" /> {d.warning}</p>
+          {d.warning && <p className="warn"><i className="dot" /> {d.warning}</p>}
         </header>
         <div className="plans">
           {d.plans.map((p) => (
@@ -85,8 +85,8 @@ export function Pricing({ d }) {
               <div className="plan__body">
                 <div className="plan__head"><h3>{p.name}</h3><p>– {p.days} –</p></div>
                 <div className="plan__price">
-                  <div><s>{p.mrp}</s><b>{p.price}</b></div>
-                  <span className="burst"><em>{p.off}</em>OFF</span>
+                  <div>{p.mrp ? <s>{p.mrp}</s> : <s aria-hidden="true">&nbsp;</s>}<b>{p.price}</b></div>
+                  {p.off && <span className="burst"><em>{p.off}</em>OFF</span>}
                 </div>
                 <ul className="ticks">
                   {p.features.map((f) => <li key={f}><Icon name="check" size={18} /> {f}</li>)}
@@ -123,10 +123,10 @@ export function PlanLadder({ d }) {
     <section className="sec sec--grey" id="pricing">
       <div className="wrap">
         <header className="shead">
-          <Pill>{d.pill}</Pill>
+          {d.eyebrow ? <p className="eyebrow">{d.eyebrow}</p> : d.pill && <Pill>{d.pill}</Pill>}
           <h2 className="h2">{d.title}</h2>
-          <p className="shead__sub">{d.subtitle}</p>
-          <p className="warn"><i className="dot" /> {d.warning}</p>
+          {d.subtitle && <p className="shead__sub">{d.subtitle}</p>}
+          {d.warning && <p className="warn"><i className="dot" /> {d.warning}</p>}
         </header>
         <div className="plans plans--ladder">
           {d.plans.map((p) => (
@@ -138,7 +138,7 @@ export function PlanLadder({ d }) {
                   {p.badge && <span className="lp__badge">{p.badge}</span>}
                 </div>
                 <b className="lp__price">{p.price}</b>
-                <span className="lp__month">{p.perMonth}/month</span>
+                {p.perMonth && <span className="lp__month">{p.perMonth}/month</span>}
                 <ul className="ticks lp__ticks">
                   {p.features.map((f) => <li key={f}><Icon name="check" size={18} /> {f}</li>)}
                 </ul>
@@ -150,7 +150,7 @@ export function PlanLadder({ d }) {
             </article>
           ))}
         </div>
-        <div className="grid3 recrow">
+        {d.recorded && <div className="grid3 recrow">
           {d.recorded.map((r, i) =>
             r.flow ? (
               <div className="rec rec--flow" key={i}>
@@ -163,7 +163,7 @@ export function PlanLadder({ d }) {
               </div>
             )
           )}
-        </div>
+        </div>}
       </div>
     </section>
   );
@@ -264,7 +264,7 @@ export function OfferCountdown({ d }) {
         {d.badge && <p className="cdbadge">{d.badge} <Icon name="clock" size={34} strokeWidth={2} /></p>}
         {d.offer && (
           <p className="offerbox">
-            <Emoji e="❄️" /> <span className="g">{d.offer}</span>
+            {d.offerIcon && <Emoji e={d.offerIcon} />} <span className="g">{d.offer}</span>
             <span className="offerbox__off">{d.upto} <b>{d.off}</b> {d.offWord}</span>
           </p>
         )}

@@ -3,21 +3,32 @@ import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 import Img from './Img.jsx';
 
-/* ---------- Evergreen offer countdown (shared by every timer on the page) ----------
-   Each visitor gets a 10-hour window stored in their browser; it restarts once it ends. */
-const WINDOW_MS = 10 * 60 * 60 * 1000;
-const KEY = 'yr_offer_deadline';
+/* ---------- Offer countdown (shared by every timer on the page) ----------
+   Default: evergreen window per visitor (10 h), stored in their browser, restarts once it ends.
+   The admin can change the window length per page, or set a fixed end date/time instead.
+   Pages call configureCountdown() before rendering (same values on the server and in the browser). */
+let cfg = { ms: 10 * 60 * 60 * 1000, endsAt: 0, key: 'yr_offer_deadline' };
 let deadline = 0;
 const listeners = new Set();
 let timer;
 
+export function configureCountdown({ hours, endsAt, key } = {}) {
+  const next = {
+    ms: (Number(hours) > 0 ? Number(hours) : 10) * 60 * 60 * 1000,
+    endsAt: endsAt ? Date.parse(endsAt) || 0 : 0,
+    key: key || 'yr_offer_deadline',
+  };
+  if (next.ms !== cfg.ms || next.endsAt !== cfg.endsAt || next.key !== cfg.key) { cfg = next; deadline = 0; }
+}
+
 function getDeadline() {
   if (deadline) return deadline;
+  if (cfg.endsAt > Date.now()) return (deadline = cfg.endsAt);
   let d = 0;
-  try { d = Number(localStorage.getItem(KEY)) || 0; } catch {}
-  if (d < Date.now()) {
-    d = Date.now() + WINDOW_MS;
-    try { localStorage.setItem(KEY, String(d)); } catch {}
+  try { d = Number(localStorage.getItem(cfg.key)) || 0; } catch {}
+  if (d < Date.now() || d > Date.now() + cfg.ms) {
+    d = Date.now() + cfg.ms;
+    try { localStorage.setItem(cfg.key, String(d)); } catch {}
   }
   return (deadline = d);
 }
@@ -30,7 +41,7 @@ function subscribe(cb) {
   return () => { listeners.delete(cb); if (!listeners.size) { clearInterval(timer); timer = null; } };
 }
 const snapshot = () => Math.max(0, Math.floor((getDeadline() - Date.now()) / 1000));
-const serverSnapshot = () => WINDOW_MS / 1000;
+const serverSnapshot = () => cfg.ms / 1000;
 const pad = (n) => String(n).padStart(2, '0');
 
 export function useCountdown() {

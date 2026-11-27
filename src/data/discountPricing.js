@@ -137,7 +137,7 @@ export const problems = {
 };
 
 export const countdown1 = { pill: '🔥 Limited Time Offer', icon: '❄️', title: 'Winter Special Offer End Soon', badge: 'Offer Ends Soon', cta: 'Join Before Offer Ends' };
-export const countdown2 = { pill: '🔥 Limited Time Offer', title: 'Special Offer End Soon', offer: 'Winter Special Offer', upto: 'UP TO', off: '30%', offWord: 'OFF', cta: 'Join Before Offer Ends' };
+export const countdown2 = { pill: '🔥 Limited Time Offer', title: 'Special Offer End Soon', offerIcon: '❄️', offer: 'Winter Special Offer', upto: 'UP TO', off: '30%', offWord: 'OFF', cta: 'Join Before Offer Ends' };
 
 export const pillars = {
   pill: 'Live Daily Classes',

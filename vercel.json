@@ -10,10 +10,11 @@
   "rewrites": [
     { "source": "/blogs{/}?", "destination": "/api/cms?__blog_path=/" },
     { "source": "/blogs/:blogPath+{/}?", "destination": "/api/cms?__blog_path=:blogPath+" },
-    { "source": "/api/:scope(auth|posts|categories|users|media|media-library)/:rest*", "destination": "/api/cms?__cms_path=:scope/:rest*" },
+    { "source": "/api/:scope(auth|posts|categories|users|media|media-library|landing|admin-landing|razorpay-payment)/:rest*", "destination": "/api/cms?__cms_path=:scope/:rest*" },
     { "source": "/admin{/}?", "destination": "/admin/index.html" },
     { "source": "/admin/posts/:id", "destination": "/admin/index.html" },
-    { "source": "/admin/:page(categories|users|account)", "destination": "/admin/index.html" }
+    { "source": "/admin/:page(categories|users|account|landing)", "destination": "/admin/index.html" },
+    { "source": "/admin/landing/:key", "destination": "/admin/index.html" }
   ],
   "headers": [
     {

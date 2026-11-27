@@ -48,6 +48,17 @@ const PostSchema = new Schema(
   { timestamps: true }
 );
 
+// Admin-managed landing content (offers, prices, schedules, FAQ…): one document per page.
+// `data` holds only what was saved from /admin; everything else falls back to the defaults in src/data/cms.js.
+const LandingSchema = new Schema(
+  {
+    page: { type: String, required: true, unique: true },
+    data: { type: Schema.Types.Mixed, default: {} },
+    updatedBy: { type: String, default: '' },
+  },
+  { timestamps: true, minimize: false }
+);
+
 // Failed logins, auto-deleted after 15 minutes (used for rate limiting)
 const LoginAttemptSchema = new Schema({ key: { type: String, index: true }, at: { type: Date, default: Date.now, expires: 900 } });
 
@@ -55,6 +66,7 @@ export const User = models.User || model('User', UserSchema);
 export const Category = models.Category || model('Category', CategorySchema);
 export const Post = models.Post || model('Post', PostSchema);
 export const LoginAttempt = models.LoginAttempt || model('LoginAttempt', LoginAttemptSchema);
+export const Landing = models.Landing || model('Landing', LandingSchema);
 
 export const slugify = (s = '') =>
   s.toString().normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()

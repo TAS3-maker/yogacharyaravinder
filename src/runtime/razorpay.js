@@ -45,6 +45,8 @@
     var t = planOf(e.target);
     if (!t) return;
     e.preventDefault();
+    // Remember the plan so /thank-you/ can show its name and price after Razorpay redirects back
+    try { var v = JSON.stringify({ plan: t.plan, t: Date.now() }); sessionStorage.setItem('yr_last_plan', v); localStorage.setItem('yr_last_plan', v); } catch (x) {}
     var form = mount(t.plan);
     var btn = t.btn;
     btn.setAttribute('aria-busy', 'true');

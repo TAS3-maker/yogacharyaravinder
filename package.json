@@ -1,7 +1,7 @@
 {
   "name": "yogacharyaravinder-react",
   "version": "1.0.0",
-  "description": "Yogacharya Ravinder website — React rebuild with static prerendering",
+  "description": "Yogacharya Ravinder website \u2014 React rebuild with static prerendering",
   "scripts": {
     "dev": "vite",
     "build": "npm run build:only && npm run build:admin",
@@ -10,6 +10,7 @@
     "vercel-build": "vite build --ssr src/entry-server.jsx --outDir dist-vercel-ssr && node scripts/prerender.mjs --blog-only && vite build --config vite.vercel.config.js",
     "preview": "vite preview --port 4173",
     "create-admin": "node scripts/create-admin.mjs",
+    "seed-landing": "node scripts/seed-landing.mjs",
     "import-wp": "node scripts/import-wp.mjs",
     "migrate:vercel-media": "node scripts/migrate-vercel-media.mjs",
     "save-assets": "node scripts/save-site-assets.mjs"

@@ -1,4 +1,5 @@
-import * as d from '../data/home.js';
+import * as base from '../data/home.js';
+import { applyHome } from '../data/cms-apply.js';
 import SiteHeader from '../components/SiteHeader.jsx';
 import { Footer, WhatsAppFab, Btn } from '../components/Layout.jsx';
 import {
@@ -6,9 +7,11 @@ import {
   Trust, Reels, Coach, Transformations, Testimonials, FaqSection, FinalCta,
 } from '../components/Sections.jsx';
 
-export const meta = d.meta;
+export const meta = base.meta;
+export const getMeta = (cms) => applyHome(base, cms).meta;
 
-export default function Home() {
+export default function Home({ cms }) {
+  const d = applyHome(base, cms);
   return (
     <>
       <a className="skip" href="#content">Skip to content</a>

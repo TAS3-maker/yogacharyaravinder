@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pathToFileURL } from 'node:url';
 import { SITE } from '../src/site.config.js';
+import 'dotenv/config';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
@@ -42,19 +43,29 @@ const gtmNoscript = `<noscript><iframe src="https://www.googletagmanager.com/ns.
   px.metaPixelId ? `<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=${px.metaPixelId}&ev=PageView&noscript=1"/></noscript>` : ''
 }`;
 
-// 3) Razorpay payment buttons (tiny inline script; Razorpay itself loads only on intent)
+// 3) Admin content (offers, prices, schedules, FAQ…) from MongoDB → baked into each page.
+//    Without MONGODB_URI (or if the database can't be reached) the pages use the seed in src/data/*.js.
+const ssrPages = blogOnly ? {} : (await import(pathToFileURL(path.join(ssrDir, 'entry-server.js')).href)).pages;
+const cmsKeys = [...new Set(Object.values(ssrPages).map((p) => p.cms).filter(Boolean))];
+const { loadForBuild } = await import('../server/landing.js');
+const cms = blogOnly ? { pages: {}, buttons: SITE.razorpay, source: 'not needed' } : await loadForBuild(cmsKeys);
+if (!blogOnly) console.log(`Landing content: ${cms.source}`);
+const cmsScript = (data) => (data ? `<script type="application/json" id="cms-data">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>` : '');
+
+// 4) Razorpay payment buttons (tiny inline script; Razorpay itself loads only on intent).
+//    Button ids: /admin → Landing pages → Razorpay payment buttons (falls back to SITE.razorpay).
 const payScript = `<script>${fs.readFileSync(path.join(root, 'src/runtime/razorpay.js'), 'utf8')
   .replace(/^\s*\/\/.*$/gm, '').replace(/\n\s*/g, '\n').trim()
-  .replace(/__PLANS__/g, JSON.stringify(SITE.razorpay || {}))}</script>`;
+  .replace(/__PLANS__/g, JSON.stringify({ ...SITE.razorpay, ...cms.buttons }))}</script>`;
 
-function write(route, html, meta, pageKey, hydrate) {
+function write(route, html, meta, pageKey, hydrate, data) {
   let out = template
-    .replace('<!--head-->', pageHead({ ...meta, path: route }))
-    .replace('<!--gtm-->', gtm)
-    .replace('<!--gtm-noscript-->', gtmNoscript)
-    .replace('<!--pay-->', payScript)
+    .replace('<!--head-->', () => pageHead({ ...meta, path: route }))
+    .replace('<!--gtm-->', () => gtm)
+    .replace('<!--gtm-noscript-->', () => gtmNoscript)
+    .replace('<!--pay-->', () => (hydrate ? cmsScript(data) : '') + payScript)
     .replace('<!--page-->', pageKey)
-    .replace('<!--app-->', html);
+    .replace('<!--app-->', () => html);
   out = checkMedia(out).replace(/ poster="(\/media\/[^"]+)"/g, (m, u) => (hasLocal(u) ? m : ''));
   if (!hydrate) {
     out = out.replace(/<script type="module"[^>]*><\/script>/g, '').replace(/<link rel="modulepreload"[^>]*>/g, '');
@@ -84,8 +95,9 @@ async function writeStaticPages() {
   fs.rmSync(path.join(dist, 'index.html')); // template only; real pages are written below
   console.log('Prerendering:');
   for (const [key, p] of Object.entries(ssr.pages)) {
-    const { html, meta } = await ssr.renderPage(key);
-    write(p.path, html, { ...meta, noindex: p.noindex }, key, p.hydrate);
+    const data = p.cms ? cms.pages[p.cms] : undefined;
+    const { html, meta } = await ssr.renderPage(key, { cms: data });
+    write(p.path, html, { ...meta, noindex: p.noindex }, key, p.hydrate, data);
   }
 
   // Until the homepage is rebuilt, opening "/" goes to the discount page (so previews aren't a blank 404)
@@ -93,7 +105,7 @@ async function writeStaticPages() {
     fs.writeFileSync(path.join(dist, 'index.html'), '<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=/discount-pricing/"><link rel="canonical" href="/discount-pricing/"><a href="/discount-pricing/">Continue</a>');
   }
 
-  // 4) sitemap + robots
+  // 5) sitemap + robots
   fs.writeFileSync(
     path.join(dist, 'sitemap.xml'),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
@@ -103,5 +115,6 @@ async function writeStaticPages() {
   );
   fs.writeFileSync(path.join(dist, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\nSitemap: ${SITE.url}/blogs/sitemap.xml\n`);
   console.log(`Done: ${urls.length} pages written to dist/`);
+  await (await import('mongoose')).default.disconnect();
   if (missing.size) console.log(`⚠ ${missing.size} media files are missing from public/media:\n   ${[...missing].slice(0, 15).join('\n   ')}`);
 }
