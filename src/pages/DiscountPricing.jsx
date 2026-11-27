@@ -37,7 +37,7 @@ export default function DiscountPricing({ cms }) {
         <FinalCta d={d.finalCta} />
       </main>
       <Footer />
-      {d.offerOn && <StickyOffer {...d.sticky} />}
+      {d.offerOn && <StickyOffer {...d.sticky} mobilePlan={d.pricing.plans.find((plan) => plan.pay === 'disc-standard-plan')} />}
       <WhatsAppFab />
     </>
   );

@@ -102,10 +102,10 @@ const defaultLinks = [
   ['FAQ', '#faq'],
 ];
 
-export function StickyOffer({ label, cta, href }) {
+export function StickyOffer({ label, cta, href, mobilePlan }) {
   const [h, m, s] = useCountdown();
   return (
-    <div className="sticky" role="region" aria-label="Offer countdown">
+    <div className="sticky" role="region" aria-label="Special offer">
       <div className="wrap sticky__in">
         <div className="sticky__timer">
           <span className="sticky__lbl"><Emoji e="⏳" /> {label}</span>
@@ -114,6 +114,12 @@ export function StickyOffer({ label, cta, href }) {
           <span className="sticky__box">{s}</span>
         </div>
         <a className="sticky__btn" href={href}><Icon name="star" size={20} /> {cta}</a>
+        {mobilePlan && (
+          <div className="sticky__mobile-plan">
+            <a className="sticky__btn" href={mobilePlan.href} data-pay={mobilePlan.pay}>Join 3 month plan</a>
+            <a className="sticky__btn" href="#pricing">Start Transformation</a>
+          </div>
+        )}
       </div>
     </div>
   );
