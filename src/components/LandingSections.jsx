@@ -3,7 +3,7 @@
 import Icon from './Icon.jsx';
 import Img from './Img.jsx';
 import { Emoji, tx } from './Emoji.jsx';
-import { Btn } from './Layout.jsx';
+import { Btn, Pill } from './Layout.jsx';
 import { Countdown, StoryCard, Faq } from './interactive.jsx';
 
 const Check = ({ size = 16 }) => <Icon name="circleCheck" size={size} strokeWidth={1.8} />;
@@ -447,6 +447,55 @@ export function WlFaq({ d }) {
         <Eyebrow>{d.eyebrow}</Eyebrow>
         <h2 className="wl-h2">{d.title}</h2>
         <div className="wl-faq"><Faq items={d.items} /></div>
+      </div>
+    </section>
+  );
+}
+
+/* ================= One Year Yoga Plan (/one-year-yoga-plan/) ================= */
+
+export function YearPlan({ d, plan }) {
+  return (
+    <section className="sec sec--grey" id="pricing">
+      <div className="wrap">
+        <header className="shead">
+          {d.pill && <Pill>{d.pill}</Pill>}
+          <h2 className="h2">{d.title}</h2>
+          <p className="shead__sub">{d.subtitle}</p>
+          {d.warning && <p className="warn"><i className="dot" /> {d.warning}</p>}
+        </header>
+        <article className="yplan">
+          {plan.tag && <p className="yplan__tag">{plan.tagIcon && <Emoji e={plan.tagIcon} />} {plan.tag}</p>}
+          <div className="yplan__head">
+            <div><h3>{plan.name}</h3>{plan.sub && <p>{plan.sub}</p>}</div>
+            {plan.offText && <span className="yplan__off">{plan.offText}</span>}
+          </div>
+          {plan.mrpText && <s className="yplan__mrp">{plan.mrpText}</s>}
+          <div className="yplan__price"><b>{plan.priceText}</b>{plan.badge && <span className="yplan__day">{plan.badge}</span>}</div>
+          {(plan.perMonthText || plan.saveText) && (
+            <div className="yplan__save">
+              {plan.perMonthText && <p>{plan.perMonthText}/month for 12 months</p>}
+              {plan.saveText && <p>You save {plan.saveText} <Emoji e="🎉" /></p>}
+            </div>
+          )}
+          <ul className="ticks yplan__ticks">{plan.features.map((f) => <li key={f}><Icon name="check" size={16} /> {f}</li>)}</ul>
+          <Btn href={plan.href} id={plan.pay} data-pay={plan.pay} variant="outline" className="btn--block">
+            {plan.cta} <Icon name="arrowLong" size={22} />
+          </Btn>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+export function VideoRow({ d }) {
+  return (
+    <section className="sec sec--mint" id="testimonials">
+      <div className="wrap center">
+        <h2 className="h2">{d.title}</h2>
+        <div className="grid3 stories vrow">{d.items.map((s, i) => <StoryCard key={i} {...s} />)}</div>
+        <p className="note">{d.note}</p>
+        <Btn href={d.cta.href} shine>{d.cta.label}</Btn>
       </div>
     </section>
   );

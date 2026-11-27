@@ -6,7 +6,7 @@ const CODES = {
   // 21-day challenge + weight-loss pages
   '❌': '274c', '⚠️': '26a0', '⚠': '26a0', '🥗': '1f957', '📱': '1f4f1', '🎁': '1f381', '🌅': '1f305', '🌙': '1f319', '🌐': '1f310',
   '🌸': '1f338', '🦋': '1f98b', '😌': '1f60c', '😴': '1f634', '🍽️': '1f37d', '🍽': '1f37d', '🩸': '1fa78', '🧍': '1f9cd', '🤱': '1f931',
-  '📅': '1f4c5', '💬': '1f4ac',
+  '📅': '1f4c5', '💬': '1f4ac', '🎉': '1f389',
 };
 // Emoji the admin can pick for offer bars / schedule rows (all have artwork in /public/emoji)
 export const EMOJI_CHOICES = Object.keys(CODES).filter((e, i, all) => all.findIndex((x) => CODES[x] === CODES[e]) === i);

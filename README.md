@@ -51,6 +51,7 @@ Admins (not editors) can change, without touching code:
 | `/` (homepage) | Slots left, 4 plans (+ per-month price and badge), trial & consultation, class timings, reviews, FAQ, SEO |
 | `/21-days-weight-loss-challenge/` | Offer on/off, timer, offer bar (`{price}` / `{mrp}` placeholders), price & MRP, features, morning/evening batches, “What you get”, free bonus, FAQ, SEO |
 | `/yoga-classes-for-weight-loss/` | 4 plans, client stories, reviews, FAQ, SEO (the “Latest blogs” cards come from the 3 newest posts automatically) |
+| `/one-year-yoga-plan/` | Offer on/off, name, emoji, slots left, timer, offer bar, the 1-year card (price, MRP → “You save”, per month, “₹10/day” badge, “75% OFF” text, offer tag, features, button text), class timings, reviews, FAQ, SEO |
 | Razorpay payment buttons | The `pl_…` id behind every plan button |
 
 **How a change reaches the site.** The pages stay pre-rendered static HTML (PageSpeed ~100):
@@ -76,13 +77,20 @@ npm run dev             # site + admin at http://localhost:5173/admin (the API r
 `npm run preview` (after `npm run build`) also serves /admin and the API. If something is missing, the login screen says exactly what (e.g. "MONGODB_URI is not set" or "Can't connect to MongoDB").
 Images uploaded locally are stored in `.cms-media/`. Images uploaded on the live site go to the deployment's blob store.
 
+## Videos
+- Testimonial videos open in a lightbox (`StoryCard` in `src/components/interactive.jsx`): a spinner shows until the video can play, and a missing/broken file shows “Sorry, this video can’t be played right now” + WhatsApp, instead of a frozen 0:00 player.
+- `npm run build` lists any video referenced in `src/data/*.js` that isn't in `public/` (⚠ video file(s) missing).
+- Keep videos light so they start fast on mobile data: H.264 + AAC MP4, `-movflags +faststart`, ~1–1.5 Mbps for testimonials at their size, reels ≤ 540 px wide and muted. Example:
+  `ffmpeg -i in.mp4 -c:v libx264 -preset veryfast -crf 24 -maxrate 1.3M -bufsize 2.6M -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart out.mp4`
+  (Instagram reels: add `-vf scale=540:-2 -an`.)
+
 ## Razorpay
 The plan buttons open Razorpay Payment Buttons, the same IDs and element ids as the live site (`basic-plan`, `disc-pro-plan`, `yoga-trial-1`, ...), so GTM click triggers keep working. The ids can be changed in `/admin → Landing pages → Razorpay payment buttons` (defaults: `SITE.razorpay` in `src/site.config.js`). Razorpay's script loads only when a visitor hovers or taps a plan button (no PageSpeed cost). If it can't load, the button falls back to its WhatsApp link. Code: `src/runtime/razorpay.js`.
 
 ### Thank You page (/thank-you/)
 Shows **“You’re officially enrolled in our “<plan>” · Your payment of ₹<amount>…”** using, in order:
 1. `?razorpay_payment_id=pay_…` → `/api/razorpay-payment` reads the payment from Razorpay (amount actually paid, payer's first name). Needs `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` on the server.
-2. `?plan=<button key>` in the redirect URL, e.g. `https://yogacharyaravinder.com/thank-you/?plan=21-day-challenge`. Set it per button in Razorpay → Payment Buttons → *Redirect to your website*. Keys: `basic-plan`, `standard-plan`, `pro-plan`, `advanced-plan`, `yfwl-6month-plan`, `yoga-trial-1`, `consultaion-call`, `disc-basic-plan`, `disc-standard-plan`, `disc-pro-plan`, `disc-advanced-plan`, `21-day-challenge`.
+2. `?plan=<button key>` in the redirect URL, e.g. `https://yogacharyaravinder.com/thank-you/?plan=21-day-challenge`. Set it per button in Razorpay → Payment Buttons → *Redirect to your website*. Keys: `basic-plan`, `standard-plan`, `pro-plan`, `advanced-plan`, `yfwl-6month-plan`, `yoga-trial-1`, `consultaion-call`, `disc-basic-plan`, `disc-standard-plan`, `disc-pro-plan`, `disc-advanced-plan`, `21-day-challenge`, `one-year-yoga-plan`.
 3. The plan button the visitor clicked in this browser (remembered by `src/runtime/razorpay.js`).
 
 Unknown values are left out (no more “Rs.0” or empty quotes). It also pushes a GA4-style `purchase` event (value, currency INR, plan) to `dataLayer` once per payment.
@@ -109,7 +117,8 @@ GTM `GTM-M7GT89HB` is on every page. Optional direct pixels (Meta Pixel, GA4, Go
 ## Pages
 - Built: `/` (homepage, content in `src/data/home.js`), `/discount-pricing/` (+ the `/old-discount-pricing/` and `/discount-pricing-test/` duplicates, set to noindex), `/privacy-policy/` and `/refund-policy/` (hand-built, text in `src/pages/PrivacyPolicy.jsx` / `RefundPolicy.jsx`), `/thank-you/` (`src/pages/ThankYou.jsx`), `/blogs/`, every blog post and blog category (from `/admin`)
 - Built: `/21-days-weight-loss-challenge/` (landing page: offer bar, no site header, like the live page) and `/yoga-classes-for-weight-loss/` (site header + footer)
-- To do (need screenshots): `/one-year-yoga-plan/`, `/contact-us/`
+- Built: `/one-year-yoga-plan/` (1 Year Yoga Membership, ₹10/day offer; Razorpay button `one-year-yoga-plan` → `pl_SxTP8bC2OCJFtE`)
+- To do (need screenshots): `/contact-us/`
   **Don't switch the live domain until these are built**, or those URLs will 404.
 
 ## Things to confirm

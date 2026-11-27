@@ -21,7 +21,7 @@ export function Hero({ d }) {
           </ul>
           <div className="btnrow">
             <Btn href={d.primary.href} shine>{d.primary.icon} {d.primary.label}</Btn>
-            <Btn href={d.secondary.href} variant="outline">{d.secondary.label}</Btn>
+            {d.secondary && <Btn href={d.secondary.href} variant="outline">{d.secondary.label}</Btn>}
           </div>
           <p className="hero__live"><i className="dot dot--pulse" /> {d.live} <span>{d.seats}</span></p>
         </div>
@@ -262,6 +262,7 @@ export function OfferCountdown({ d }) {
         <Pill>{d.pill}</Pill>
         <h2 className="h2">{d.icon && <><Emoji e={d.icon} />{' '}</>}{d.title}</h2>
         {d.badge && <p className="cdbadge">{d.badge} <Icon name="clock" size={34} strokeWidth={2} /></p>}
+        {d.warning && <p className="warn cd__warn"><i className="dot dot--pulse" /> {d.warning}</p>}
         {d.offer && (
           <p className="offerbox">
             {d.offerIcon && <Emoji e={d.offerIcon} />} <span className="g">{d.offer}</span>
@@ -432,7 +433,7 @@ export function FinalCta({ d }) {
           <p>{d.text}</p>
           <div className="btnrow btnrow--center">
             <Btn href={d.primary.href} variant="white">{d.primary.icon} {d.primary.label}</Btn>
-            <Btn href={d.secondary.href} variant="glass">{d.secondary.icon} {d.secondary.label}</Btn>
+            {d.secondary && <Btn href={d.secondary.href} variant="glass">{d.secondary.icon} {d.secondary.label}</Btn>}
           </div>
           <p className="fcta__proof"><Icon name="circleCheck" size={30} strokeWidth={1.5} /> <span>{d.proof[0]}<b>{d.proof[1]}</b>{d.proof[2]}</span></p>
         </div>

@@ -10,6 +10,7 @@ import * as dp from './discountPricing.js';
 import * as home from './home.js';
 import * as c21 from './challenge21.js';
 import * as wl from './weightLoss.js';
+import * as oy from './oneYear.js';
 import { SITE } from '../site.config.js';
 
 import { inr, offPct } from './cms-apply.js';
@@ -22,6 +23,7 @@ export const CMS_PAGES = {
   home: { label: 'Homepage', path: '/', sections: ['slots', 'plans', 'trial', 'schedule', 'testimonials', 'faq', 'seo'] },
   '21-days-weight-loss-challenge': { label: '21 Day Weight Loss Challenge', path: '/21-days-weight-loss-challenge/', sections: ['offer', 'plans', 'schedule', 'inside', 'bonus', 'faq', 'seo'] },
   'yoga-classes-for-weight-loss': { label: 'Yoga Classes for Weight Loss', path: '/yoga-classes-for-weight-loss/', sections: ['plans', 'stories', 'reviews', 'faq', 'seo'] },
+  'one-year-yoga-plan': { label: 'One Year Yoga Plan (₹10/day)', path: '/one-year-yoga-plan/', sections: ['offer', 'plans', 'schedule', 'testimonials', 'faq', 'seo'] },
 };
 // Global Razorpay payment button ids (key = the button's element id used on the pages)
 export const PAYMENTS = '_payments';
@@ -79,6 +81,18 @@ export function defaults(page) {
         reviews: wl.reviews.items.map((r) => ({ ...r })),
         faq: wl.faq.items.map((f) => ({ ...f })),
       };
+    case 'one-year-yoga-plan':
+      return {
+        seo: seoOf(oy.meta),
+        offer: {
+          active: true, name: 'Summer Special Offer', icon: '🎉', slots: num(oy.hero.pill), hours: 10, endsAt: null,
+          bar: oy.offerBar.map((b) => ({ icon: b.icon || '', text: b.text })),
+        },
+        plans: [planOf(oy.plan, { offText: oy.plan.offText, tag: oy.plan.tag })],
+        schedule: { morning: rows(oy.schedule.morning), evening: rows(oy.schedule.evening) },
+        testimonials: oy.testimonials.items.map((t) => ({ ...t })),
+        faq: oy.faq.items.map((f) => ({ ...f })),
+      };
     case PAYMENTS:
       return { buttons: { ...SITE.razorpay } };
     default:
@@ -129,6 +143,8 @@ export function normalize(page, body = {}) {
     };
     if (isTrial) o.text = str(p.text, 300);
     else Object.assign(o, { mrp: money(p.mrp), perMonth: money(p.perMonth), badge: str(p.badge, 20), popular: !!p.popular });
+    if ('offText' in d) o.offText = str(p.offText, 20);
+    if ('tag' in d) o.tag = str(p.tag, 40);
     return o;
   });
   if (body.plans && def.plans) out.plans = editPlans(body.plans, def.plans, false);
@@ -167,7 +183,7 @@ export function planCatalog(all = {}) {
     const m = merged(page, all[page]);
     for (const p of [...(m.plans || []), ...(m.trial || [])]) {
       // Homepage-style plans are named "Basic", "Pro"… → "Basic Plan (1 Month)"
-      const name = p.perMonth && p.sub ? `${p.name} Plan (${p.sub})` : p.name;
+      const name = p.perMonth && p.sub && !/\s/.test(p.name.trim()) ? `${p.name} Plan (${p.sub})` : p.name;
       if (!out[p.pay]) out[p.pay] = { name, price: p.price };
     }
   }

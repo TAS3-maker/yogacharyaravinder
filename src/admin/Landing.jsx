@@ -192,6 +192,12 @@ function Plans({ title, value, trial, onChange }) {
               {!trial && 'perMonth' in p && p.perMonth !== null && <label>Per month ₹<input type="number" min="0" value={p.perMonth ?? ''} onChange={(e) => up(i, 'perMonth', e.target.value)} /></label>}
               {!trial && <label>Badge<input value={p.badge || ''} placeholder="e.g. BEST VALUE" onChange={(e) => up(i, 'badge', e.target.value)} /></label>}
             </div>
+            {('offText' in p || 'tag' in p) && (
+              <div className="lp-grid lp-grid--2">
+                {'tag' in p && <label>Offer tag <small className="muted">(above the card)</small><input value={p.tag || ''} onChange={(e) => up(i, 'tag', e.target.value)} /></label>}
+                {'offText' in p && <label>“% OFF” text <small className="muted">(empty = hide)</small><input value={p.offText || ''} placeholder="e.g. 75% OFF" onChange={(e) => up(i, 'offText', e.target.value)} /></label>}
+              </div>
+            )}
             {!trial && Number(p.mrp) > Number(p.price) && <p className="lp-off">Shows {inr(p.mrp)} → {inr(p.price)} · <b>{offPct({ mrp: Number(p.mrp), price: Number(p.price) })}% OFF</b></p>}
             {trial && <label>Description<textarea rows={2} value={p.text} onChange={(e) => up(i, 'text', e.target.value)} /></label>}
             <label>Features <small className="muted">(one per line)</small><Lines value={p.features} onChange={(x) => up(i, 'features', x)} /></label>

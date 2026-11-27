@@ -116,3 +116,38 @@ export function applyWeightLoss(d, c) {
   };
 }
 
+
+export function applyOneYear(d, c) {
+  const o = c?.offer || {};
+  const on = c ? o.active !== false : true;
+  const cp = byPay(c?.plans, d.plan.pay);
+  const p = cp
+    ? {
+      ...d.plan, name: cp.name || d.plan.name, sub: cp.sub ?? d.plan.sub, price: cp.price ?? d.plan.price, mrp: cp.mrp ?? null,
+      perMonth: cp.perMonth ?? null, badge: cp.badge ?? '', offText: cp.offText ?? '', tag: cp.tag ?? d.plan.tag,
+      features: cp.features?.length ? cp.features : d.plan.features, cta: cp.cta || d.plan.cta,
+    }
+    : d.plan;
+  const plan = {
+    ...p,
+    tag: on ? p.tag : '',
+    priceText: inr(p.price),
+    mrpText: p.mrp ? inr(p.mrp) : '',
+    perMonthText: p.perMonth ? inr(p.perMonth) : '',
+    saveText: p.mrp > p.price ? inr(p.mrp - p.price) : '',
+  };
+  const slots = c ? o.slots : null;
+  return {
+    ...d,
+    meta: meta(d.meta, c),
+    offerOn: on,
+    countdownCfg: { hours: o.hours || 10, endsAt: o.endsAt, key: 'yr_offer_deadline' },
+    offerBar: d.offerBar.map((b, i) => ({ ...b, icon: o.bar?.[i]?.icon ?? b.icon, text: o.bar?.[i]?.text || b.text })),
+    hero: { ...d.hero, pill: slots === null ? d.hero.pill : slots > 0 ? `🔥 Only ${slots} slots left for the batch` : '' },
+    countdown: { ...d.countdown, title: `${o.name || 'Special Offer'} Ending Soon` },
+    plan,
+    schedule: sched(d.schedule, c),
+    testimonials: c?.testimonials ? { ...d.testimonials, items: c.testimonials } : d.testimonials,
+    faq: c?.faq ? { ...d.faq, items: c.faq } : d.faq,
+  };
+}

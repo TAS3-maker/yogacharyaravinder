@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 import Img from './Img.jsx';
+import { wa } from '../site.config.js';
+
+const SITE_WA = wa('Hi, a testimonial video on your website is not playing');
 
 /* ---------- Offer countdown (shared by every timer on the page) ----------
    Default: evergreen window per visitor (10 h), stored in their browser, restarts once it ends.
@@ -134,7 +137,7 @@ export function LazyVideo({ src, poster, label }) {
       <video
         ref={ref}
         src={near ? src : undefined}
-        poster={poster}
+        poster={near ? poster : undefined}
         muted
         loop
         playsInline
@@ -167,11 +170,45 @@ export function StoryCard({ poster, alt, video }) {
       {open && createPortal(
         <div className="lb" role="dialog" aria-modal="true" aria-label={alt} onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
           <button className="lb__close" onClick={() => setOpen(false)} aria-label="Close video"><Icon name="close" size={30} strokeWidth={2} /></button>
-          <video src={video} poster={poster} controls autoPlay playsInline />
+          <LightboxVideo src={video} poster={poster} />
         </div>,
         document.body
       )}
     </>
+  );
+}
+
+/* Video inside the lightbox: shows a spinner until it can play, and a clear message if the file can't be loaded
+   (instead of a frozen player at 0:00). Starts playing as soon as enough has buffered. */
+function LightboxVideo({ src, poster }) {
+  const ref = useRef(null);
+  const [state, setState] = useState('loading'); // loading | ready | error
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const ready = () => { setState('ready'); v.play?.().catch(() => {}); };
+    const fail = () => setState('error');
+    v.addEventListener('canplay', ready, { once: true });
+    v.addEventListener('error', fail);
+    v.querySelector('source')?.addEventListener('error', fail);
+    if (v.readyState >= 3) ready();
+    return () => { v.removeEventListener('canplay', ready); v.removeEventListener('error', fail); };
+  }, [src]);
+  if (state === 'error') {
+    return (
+      <div className="lb__msg" role="alert">
+        <p>Sorry, this video can’t be played right now.</p>
+        <a className="btn btn--white" href={SITE_WA}>Ask us on WhatsApp</a>
+      </div>
+    );
+  }
+  return (
+    <div className="lb__vid">
+      <video ref={ref} poster={poster} controls autoPlay playsInline preload="auto">
+        <source src={src} type="video/mp4" />
+      </video>
+      {state === 'loading' && <span className="lb__spin" aria-label="Loading video" />}
+    </div>
   );
 }
 

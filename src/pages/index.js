@@ -23,6 +23,12 @@ export const pages = {
     hydrate: true,
     cms: 'yoga-classes-for-weight-loss',
   },
+  'one-year-yoga-plan': {
+    load: () => import('./OneYearPlan.jsx'),
+    path: '/one-year-yoga-plan/',
+    hydrate: true,
+    cms: 'one-year-yoga-plan',
+  },
   'privacy-policy': { load: () => import('./PrivacyPolicy.jsx'), path: '/privacy-policy/', hydrate: false },
   'refund-policy': { load: () => import('./RefundPolicy.jsx'), path: '/refund-policy/', hydrate: false },
   'thank-you': { load: () => import('./ThankYou.jsx'), path: '/thank-you/', hydrate: true, noindex: true, cms: 'thank-you' },

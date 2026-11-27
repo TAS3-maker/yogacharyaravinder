@@ -112,6 +112,12 @@ async function writeStaticPages() {
   );
   fs.writeFileSync(path.join(dist, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE.url}/sitemap.xml\nSitemap: ${SITE.url}/blogs/sitemap.xml\n`);
   console.log(`Done: ${urls.length} pages written to dist/`);
+  // Videos referenced in src/data/*.js that aren't in public/ play as a frozen 0:00 player on the site.
+  const dataDir = path.join(root, 'src/data');
+  const missingVideos = [...new Set(fs.readdirSync(dataDir).filter((f) => f.endsWith('.js'))
+    .flatMap((f) => [...fs.readFileSync(path.join(dataDir, f), 'utf8').matchAll(/['"`](\/media\/[^'"`$]+\.(?:mp4|webm|mov))['"`]/g)].map((m) => m[1])))]
+    .filter((v) => !fs.existsSync(path.join(root, 'public', v)));
+  if (missingVideos.length) console.warn(`\n⚠  ${missingVideos.length} video file(s) missing from public/ (they will not play):\n${missingVideos.map((v) => '   public' + v).join('\n')}\n`);
   await (await import('mongoose')).default.disconnect();
   if (missing.size) console.log(`⚠ ${missing.size} media files are missing from public/media:\n   ${[...missing].slice(0, 15).join('\n   ')}`);
 }
