@@ -1,8 +1,8 @@
 // /thank-you/ — shown after a Razorpay payment (Razorpay → Payment Buttons → redirect URL).
-// Shows the plan and amount the visitor actually paid for, taken (in this order) from:
+// Shows checkout details from these sources, in order:
 //   1. ?razorpay_payment_id=pay_…  → /api/razorpay-payment reads the payment from Razorpay (amount paid, first name)
-//   2. ?plan=<button key>          → e.g. /thank-you/?plan=21-day-challenge (set per button in Razorpay)
-//   3. the plan button the visitor clicked on this browser (remembered by src/runtime/razorpay.js)
+//   2. ?data-plan=1-Month&data-price=1499 → display values from the redirect URL
+//   3. ?plan=<button key> or the last plan button clicked on this browser → catalog details
 // Anything unknown is left out, so the page never shows "Rs.0" or empty quotes.
 import { useEffect, useState } from 'react';
 import SiteHeader from '../components/SiteHeader.jsx';
@@ -33,14 +33,26 @@ function lastPlan() {
 export default function ThankYou({ cms }) {
   const catalog = cms?.catalog || {}; // every plan's name + price, embedded at build time (and refreshed from /admin)
   // Filled after hydration (the prerendered HTML stays generic for every visitor)
-  const [key, setKey] = useState(undefined);
+  const [checkout, setCheckout] = useState(null);
   const [payment, setPayment] = useState(null);
 
   useEffect(() => {
     const q = new URLSearchParams(location.search);
-    setKey(q.get('plan') || lastPlan() || '');
+    const price = q.get('data-price')?.trim() || '';
+    const amount = Number(price);
+    const name = q.get('data-plan')?.trim() || '';
+    const key = q.get('plan')?.trim() || '';
     const id = q.get('razorpay_payment_id') || '';
-    if (/^pay_[A-Za-z0-9]{6,30}$/.test(id)) {
+    const hasPaymentId = /^pay_[A-Za-z0-9]{6,30}$/.test(id);
+    const displayAmount = /^\d+(\.\d{1,2})?$/.test(price) && Number.isFinite(amount) && amount > 0 ? amount : null;
+    if (!key && !name && displayAmount === null && !hasPaymentId) return;
+
+    setCheckout({
+      key: key || lastPlan() || '',
+      name,
+      amount: displayAmount,
+    });
+    if (hasPaymentId) {
       fetch('/api/razorpay-payment?id=' + encodeURIComponent(id))
         .then((r) => (r.ok ? r.json() : null))
         .then((p) => p && setPayment({ ...p, id }))
@@ -49,24 +61,27 @@ export default function ThankYou({ cms }) {
   }, []);
 
   // Recomputed when fresh prices arrive from /admin (main.jsx re-renders with new `cms`)
-  const plan = key ? catalog[key] : null;
-  const info = key === undefined ? null : {
-    name: plan?.name || '',
-    amount: payment?.amount ?? plan?.price ?? null,
+  const plan = checkout?.key ? catalog[checkout.key] : null;
+  const info = checkout ? {
+    name: checkout.name || plan?.name || '',
+    amount: payment?.amount ?? checkout.amount ?? plan?.price ?? null,
     firstName: payment?.firstName || '',
     id: payment?.id || '',
-  };
+  } : null;
 
   // Purchase event for GTM (once per payment / plan per session)
+  const trackedAmount = payment?.amount ?? plan?.price;
+  const trackedName = plan?.name || (payment ? checkout?.name : '') || 'Yoga plan';
+  const paymentId = payment?.id;
   useEffect(() => {
-    if (!info?.amount) return;
-    const txn = info.id || `tyk_${info.name}_${new Date().toDateString()}`;
+    if (!trackedAmount) return;
+    const txn = paymentId || `tyk_${trackedName}_${new Date().toDateString()}`;
     try { if (sessionStorage.getItem('yr_tracked_' + txn)) return; sessionStorage.setItem('yr_tracked_' + txn, '1'); } catch {}
     (window.dataLayer = window.dataLayer || []).push({
       event: 'purchase',
-      ecommerce: { transaction_id: txn, value: info.amount, currency: 'INR', items: [{ item_name: info.name || 'Yoga plan', price: info.amount, quantity: 1 }] },
+      ecommerce: { transaction_id: txn, value: trackedAmount, currency: 'INR', items: [{ item_name: trackedName, price: trackedAmount, quantity: 1 }] },
     });
-  }, [info?.amount, info?.id]);
+  }, [trackedAmount, trackedName, paymentId]);
 
   return (
     <>
