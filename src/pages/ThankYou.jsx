@@ -47,6 +47,8 @@ export default function ThankYou({ cms }) {
     const displayAmount = /^\d+(\.\d{1,2})?$/.test(price) && Number.isFinite(amount) && amount > 0 ? amount : null;
     if (!key && !name && displayAmount === null && !hasPaymentId) return;
 
+    if (displayAmount !== null) window.metaPixel?.purchase(displayAmount);
+
     setCheckout({
       key: key || lastPlan() || '',
       name,

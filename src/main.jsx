@@ -13,7 +13,7 @@ try { cms = JSON.parse(document.getElementById('cms-data')?.textContent || 'null
 if (page) {
   const prerendered = !!root.firstElementChild;
   // Production: pages are pre-rendered HTML; only interactive ones hydrate.
-  // Dev server: nothing is pre-rendered, so every page renders here.
+  // Dev server: nothing is pre-rendered, so every page renders here. 
   if (!prerendered || page.hydrate) {
     page.load().then(({ default: Page }) => {
       const r = prerendered ? hydrateRoot(root, <Page cms={cms} />) : createRoot(root);

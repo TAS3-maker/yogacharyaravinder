@@ -43,7 +43,6 @@ export const SITE = {
   },
   // Extra tracking pixels (leave '' if they are already fired through GTM). All load deferred, like GTM.
   pixels: {
-    metaPixelId: '', // Facebook / Meta Pixel ID, e.g. '1234567890'
     ga4Id: '', // Google Analytics 4, e.g. 'G-XXXXXXX'
     googleAdsId: '', // Google Ads, e.g. 'AW-XXXXXXX'
     clarityId: '', // Microsoft Clarity project id

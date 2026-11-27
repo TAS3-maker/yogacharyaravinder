@@ -30,7 +30,6 @@ const gtagIds = [px.ga4Id, px.googleAdsId].filter(Boolean);
 const tags = [
   `w.dataLayer=w.dataLayer||[];w.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});add('https://www.googletagmanager.com/gtm.js?id=${SITE.gtmId}');`,
   gtagIds.length && `w.gtag=function(){w.dataLayer.push(arguments)};gtag('js',new Date());${gtagIds.map((id) => `gtag('config','${id}');`).join('')}add('https://www.googletagmanager.com/gtag/js?id=${gtagIds[0]}');`,
-  px.metaPixelId && `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(w,d);fbq('init','${px.metaPixelId}');fbq('track','PageView');add('https://connect.facebook.net/en_US/fbevents.js');`,
   px.clarityId && `w.clarity=w.clarity||function(){(w.clarity.q=w.clarity.q||[]).push(arguments)};add('https://www.clarity.ms/tag/${px.clarityId}');`,
 ].filter(Boolean).join('');
 const loader = `function(){${tags}}`;
@@ -39,9 +38,7 @@ const gtm = `<script>(function(w,d){var done=0;function add(u){var s=d.createEle
     ? `['scroll','click','touchstart','keydown','mousemove'].forEach(function(e){w.addEventListener(e,load,{once:true,passive:true})});w.addEventListener('load',function(){setTimeout(load,4000)});`
     : 'load();'
 }})(window,document);</script>`;
-const gtmNoscript = `<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${SITE.gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>${
-  px.metaPixelId ? `<noscript><img height="1" width="1" style="display:none" alt="" src="https://www.facebook.com/tr?id=${px.metaPixelId}&ev=PageView&noscript=1"/></noscript>` : ''
-}`;
+const gtmNoscript = `<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${SITE.gtmId}" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>`;
 
 // 3) Admin content (offers, prices, schedules, FAQ…) from MongoDB → baked into each page.
 //    Without MONGODB_URI (or if the database can't be reached) the pages use the seed in src/data/*.js.
