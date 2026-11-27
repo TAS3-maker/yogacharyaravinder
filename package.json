@@ -1,0 +1,48 @@
+{
+  "name": "yogacharyaravinder-react",
+  "version": "1.0.0",
+  "description": "Yogacharya Ravinder website \u2014 React rebuild with static prerendering",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run build:only && npm run build:admin",
+    "build:only": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "build:admin": "vite build --config vite.admin.config.js",
+    "vercel-build": "vite build --ssr src/entry-server.jsx --outDir dist-vercel-ssr && node scripts/prerender.mjs --blog-only && vite build --config vite.vercel.config.js",
+    "preview": "vite preview --port 4173",
+    "create-admin": "node scripts/create-admin.mjs",
+    "seed-landing": "node scripts/seed-landing.mjs",
+    "import-wp": "node scripts/import-wp.mjs",
+    "migrate:vercel-media": "node scripts/migrate-vercel-media.mjs",
+    "save-assets": "node scripts/save-site-assets.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.11",
+    "@tiptap/extension-image": "^3.35.0",
+    "@tiptap/pm": "^3.35.0",
+    "@tiptap/react": "^3.35.0",
+    "@tiptap/starter-kit": "^3.35.0",
+    "@vercel/blob": "^2.9.0",
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.13.1",
+    "preact": "^10.29.8",
+    "preact-render-to-string": "^6.8.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sanitize-html": "^2.18.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "ffmpeg-static": "^5.3.0",
+    "sharp": "^0.35.5",
+    "vite": "^5.4.21"
+  },
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  }
+}

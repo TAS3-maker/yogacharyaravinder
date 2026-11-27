@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+dist-vercel-ssr
+.cache
+.env
+.vercel
+.cms-media
+# Legacy generated blog files from older checkouts
+content/blog
+public/media/cms
